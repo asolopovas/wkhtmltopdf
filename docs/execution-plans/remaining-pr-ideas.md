@@ -54,17 +54,17 @@ Acceptance:
 
 Source idea: PR #5075.
 
-- [ ] Fix null-`ok` handling in settings parsers where missing.
-- [ ] Align constructor initializer order with declaration order where warning-prone.
-- [ ] Prefer minimal, safe warning fixes over broad signal rewrites.
-- [ ] Add/adjust focused tests only if behavior changes; otherwise rely on build diagnostics.
-- [ ] Validate with build and smoke tests.
+- [x] Fix null-`ok` handling in settings parsers where missing (review found the risky writes were already guarded; retained that behavior).
+- [x] Align constructor initializer order/formatting with declaration order where warning-prone.
+- [x] Prefer minimal, safe warning fixes over broad signal rewrites.
+- [x] Add/adjust focused tests only if behavior changes; otherwise rely on build diagnostics.
+- [x] Validate with build and smoke tests.
 - [ ] Commit separately.
 
 Acceptance:
 
-- [ ] No behavior changes except avoiding null pointer writes in parser helpers.
-- [ ] Qt 5 local build remains clean enough for the touched files.
+- [x] No behavior changes except avoiding null pointer writes in parser helpers.
+- [x] Qt 5 local build remains clean enough for the touched files.
 
 ## Feature 3: Windows Unicode CLI argument handling
 
