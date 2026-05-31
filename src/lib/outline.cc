@@ -25,6 +25,34 @@
 using namespace std;
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 
+namespace {
+
+QString toRomanNumber(int number) {
+	if (number <= 0)
+		return QString();
+
+	struct RomanDigit {
+		int value;
+		const char * symbol;
+	};
+	static const RomanDigit romanDigits[] = {
+		{1000, "M"}, {900, "CM"}, {500, "D"}, {400, "CD"},
+		{100, "C"}, {90, "XC"}, {50, "L"}, {40, "XL"},
+		{10, "X"}, {9, "IX"}, {5, "V"}, {4, "IV"}, {1, "I"}
+	};
+
+	QString roman;
+	for (uint i = 0; i < sizeof(romanDigits) / sizeof(romanDigits[0]); ++i) {
+		while (number >= romanDigits[i].value) {
+			roman += QLatin1String(romanDigits[i].symbol);
+			number -= romanDigits[i].value;
+		}
+	}
+	return roman;
+}
+
+}
+
 namespace wkhtmltopdf {
 /*!
   \file outline_p.hh
@@ -315,9 +343,22 @@ void Outline::fillHeaderFooterParms(int page, QHash<QString, QString> & parms, c
 	foreach (const SP & rep, ps.replacements)
 		parms[rep.first] = rep.second;
 
-	parms["frompage"] = QString::number(off+1);
-	parms["topage"] = QString::number(off+d->pageCount);
-	parms["page" ] = QString::number(page+off);
+	int fromPage = off+1;
+	int toPage = off+d->pageCount;
+	int currentPage = page+off;
+	QString fromPageRoman = toRomanNumber(fromPage);
+	QString toPageRoman = toRomanNumber(toPage);
+	QString currentPageRoman = toRomanNumber(currentPage);
+
+	parms["frompage"] = QString::number(fromPage);
+	parms["topage"] = QString::number(toPage);
+	parms["page" ] = QString::number(currentPage);
+	parms["frompage_roman"] = fromPageRoman;
+	parms["topage_roman"] = toPageRoman;
+	parms["page_roman" ] = currentPageRoman;
+	parms["frompage_roman_lower"] = fromPageRoman.toLower();
+	parms["topage_roman_lower"] = toPageRoman.toLower();
+	parms["page_roman_lower" ] = currentPageRoman.toLower();
 	parms["webpage"] = ps.page;
 	parms["section" ] = d->hfCache[0][page]?d->hfCache[0][page]->value:QString("");
 	parms["subsection" ] = d->hfCache[1][page]?d->hfCache[1][page]->value:QString("");

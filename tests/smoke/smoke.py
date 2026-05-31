@@ -99,6 +99,8 @@ def main() -> int:
             "--quiet",
             "--header-html",
             header,
+            "--header-right",
+            "Page [page_roman]/[topage_roman]",
             "--header-margin",
             "2",
             "--footer-html",

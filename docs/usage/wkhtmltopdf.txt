@@ -296,6 +296,10 @@ Footers And Headers:
    * [page]       Replaced by the number of the pages currently being printed
    * [frompage]   Replaced by the number of the first page to be printed
    * [topage]     Replaced by the number of the last page to be printed
+   * [page_roman], [frompage_roman], [topage_roman]
+                  Replaced by the corresponding page numbers as uppercase Roman numerals
+   * [page_roman_lower], [frompage_roman_lower], [topage_roman_lower]
+                  Replaced by the corresponding page numbers as lowercase Roman numerals
    * [webpage]    Replaced by the URL of the page being printed
    * [section]    Replaced by the name of the current section
    * [subsection] Replaced by the name of the current subsection
@@ -328,7 +332,7 @@ Footers And Headers:
               vars[temp_var[0]] = decodeURI(temp_var[1]);
           }
       }
-      var css_selector_classes = ['page', 'frompage', 'topage', 'webpage', 'section', 'subsection', 'date', 'isodate', 'time', 'title', 'doctitle', 'sitepage', 'sitepages'];
+      var css_selector_classes = ['page', 'frompage', 'topage', 'page_roman', 'frompage_roman', 'topage_roman', 'page_roman_lower', 'frompage_roman_lower', 'topage_roman_lower', 'webpage', 'section', 'subsection', 'date', 'isodate', 'time', 'title', 'doctitle', 'sitepage', 'sitepages'];
       for (var css_class in css_selector_classes) {
           if (css_selector_classes.hasOwnProperty(css_class)) {
               var element = document.getElementsByClassName(css_selector_classes[css_class]);
