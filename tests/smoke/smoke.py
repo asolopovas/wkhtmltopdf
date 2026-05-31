@@ -44,10 +44,21 @@ def runtime_env(*executables: Path) -> dict[str, str]:
     return env
 
 
-def run(args: list[Path | str], env: dict[str, str]) -> subprocess.CompletedProcess[bytes]:
+def run(
+    args: list[Path | str],
+    env: dict[str, str],
+    pass_fds: tuple[int, ...] = (),
+) -> subprocess.CompletedProcess[bytes]:
     printable = " ".join(str(a) for a in args)
     print(f"+ {printable}")
-    return subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, env=env)
+    return subprocess.run(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+        env=env,
+        pass_fds=pass_fds,
+    )
 
 
 def assert_magic(path: Path, magic: bytes) -> None:
@@ -111,6 +122,50 @@ def main() -> int:
             margin_pdf,
         ], env)
         assert_magic(margin_pdf, PDF_MAGIC)
+
+        source_header = """
+<!doctype html><html><body style='margin:0;font-size:8pt'>
+  Source header <span class='page'></span>/<span class='topage'></span>
+</body></html>
+""".strip()
+        source_footer = """
+<!doctype html><html><body style='margin:0;font-size:8pt'>
+  Source footer
+</body></html>
+""".strip()
+        source_pdf = tmpdir / "header-footer-source.pdf"
+        run([
+            wkhtmltopdf,
+            "--quiet",
+            "--header-html-source",
+            source_header,
+            "--footer-html-source",
+            source_footer,
+            simple,
+            source_pdf,
+        ], env)
+        assert_magic(source_pdf, PDF_MAGIC)
+
+        if Path("/proc/self/fd").exists():
+            read_fd, write_fd = os.pipe()
+            try:
+                os.write(write_fd, source_header.encode())
+                os.close(write_fd)
+                write_fd = -1
+                fd_pdf = tmpdir / "header-footer-fd.pdf"
+                run([
+                    wkhtmltopdf,
+                    "--quiet",
+                    "--header-html",
+                    f"/proc/self/fd/{read_fd}",
+                    simple,
+                    fd_pdf,
+                ], env, pass_fds=(read_fd,))
+                assert_magic(fd_pdf, PDF_MAGIC)
+            finally:
+                if write_fd != -1:
+                    os.close(write_fd)
+                os.close(read_fd)
 
         png = tmpdir / "styled.png"
         run([wkhtmltoimage, "--quiet", "--format", "png", styled, png], env)

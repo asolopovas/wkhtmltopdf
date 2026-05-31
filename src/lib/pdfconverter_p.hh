@@ -64,7 +64,11 @@ public:
     // keeps preloaded header to calculate header height
     QWebPage * measuringHeader;
     // keeps preloaded footer to calculate header height
-    QWebPage * measuringFooter;
+	QWebPage * measuringFooter;
+	// Cached header HTML source, used for one-shot sources such as pipes
+	QString headerHtmlData;
+	// Cached footer HTML source, used for one-shot sources such as pipes
+	QString footerHtmlData;
     // webprinter instance
     QWebPrinter *web_printer;
 #endif
@@ -162,7 +166,8 @@ private:
 	void endPage(PageObject & object, bool hasHeaderFooter, int objectPage,  int pageNumber);
 	void fillParms(QHash<QString, QString> & parms, int page, const PageObject & object);
 	QString hfreplace(const QString & q, const QHash<QString, QString> & parms);
-	QWebPage * loadHeaderFooter(QString url, const QHash<QString, QString> & parms, const settings::PdfObject & ps);
+	QWebPage * loadHeaderFooter(QString url, const QString & data, const QHash<QString, QString> & parms, const settings::PdfObject & ps);
+	bool cacheHeaderFooterHtml(const settings::HeaderFooter & hf, QString & data);
     qreal calculateHeaderHeight(PageObject & object, QWebPage & header);
 
 #endif

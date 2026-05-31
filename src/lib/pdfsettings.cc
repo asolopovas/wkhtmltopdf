@@ -142,6 +142,7 @@ struct DLL_LOCAL ReflectImpl<HeaderFooter>: public ReflectClass {
 		WKHTMLTOPDF_REFLECT(center);
 		WKHTMLTOPDF_REFLECT(line);
 		WKHTMLTOPDF_REFLECT(htmlUrl);
+		WKHTMLTOPDF_REFLECT(htmlSource);
 		WKHTMLTOPDF_REFLECT(spacing);
 		WKHTMLTOPDF_REFLECT(margin);
 	}
@@ -363,6 +364,7 @@ HeaderFooter::HeaderFooter():
 	center(""),
 	line(false),
 	htmlUrl(""),
+	htmlSource(""),
 	spacing(0.0),
 	margin(0.0) {}
 

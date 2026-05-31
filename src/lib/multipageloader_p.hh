@@ -86,6 +86,8 @@ class DLL_LOCAL ResourceObject: public QObject {
 private:
 	MyNetworkAccessManager networkAccessManager;
 	QUrl url;
+	QString htmlData;
+	bool hasHtmlData;
 	int loginTry;
 	int progress;
 	int windowStatusCounter;
@@ -93,7 +95,7 @@ private:
 	bool signalPrint;
 	MultiPageLoaderPrivate & multiPageLoader;
 public:
-	ResourceObject(MultiPageLoaderPrivate & mpl, const QUrl & u, const settings::LoadPage & s);
+	ResourceObject(MultiPageLoaderPrivate & mpl, const QUrl & u, const settings::LoadPage & s, const QString * data = 0);
 	MyQWebPage webPage;
 	LoaderObject lo;
 	int httpErrorCode;
@@ -148,6 +150,7 @@ public:
 	MultiPageLoaderPrivate(const settings::LoadGlobal & settings, int dpi, MultiPageLoader & o);
 	~MultiPageLoaderPrivate();
 	LoaderObject * addResource(const QUrl & url, const settings::LoadPage & settings);
+	LoaderObject * addResource(const QUrl & url, const settings::LoadPage & settings, const QString & data);
 	void load();
 	void clearResources();
 	void cancel();

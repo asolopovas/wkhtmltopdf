@@ -98,6 +98,7 @@
  *      can be corrected with the margin.top setting.
  * - \b header.margin Extra reserve margin between the measured header and page content, e.g. "2".
  * - \b header.htmlUrl Url for a HTML document to use for the header.
+ * - \b header.htmlSource HTML source string to use for the header instead of loading a URL.
  *
  * \section pagePdfGlobal Pdf global settings
  * The \ref wkhtmltopdf_global_settings structure contains the following settings:

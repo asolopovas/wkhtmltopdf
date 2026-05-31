@@ -220,9 +220,11 @@ QString MyQWebPage::overrideMediaType() const
     return resource.settings.printMediaType ? "print" : "screen";
 }
 
-ResourceObject::ResourceObject(MultiPageLoaderPrivate & mpl, const QUrl & u, const settings::LoadPage & s):
+ResourceObject::ResourceObject(MultiPageLoaderPrivate & mpl, const QUrl & u, const settings::LoadPage & s, const QString * data):
 	networkAccessManager(s),
 	url(u),
+	htmlData(data ? *data : QString()),
+	hasHtmlData(data != 0),
 	loginTry(0),
 	progress(0),
 	windowStatusCounter(0),
@@ -571,7 +573,9 @@ void ResourceObject::load() {
 	foreach (const HT & j, settings.customHeaders)
 		r.setRawHeader(j.first.toLatin1(), j.second.toLatin1());
 
-	if (postData.isEmpty())
+	if (hasHtmlData)
+		webPage.mainFrame()->setHtml(htmlData, url);
+	else if (postData.isEmpty())
 		webPage.mainFrame()->load(r);
 	else {
 		if (hasFiles)
@@ -664,6 +668,13 @@ LoaderObject * MultiPageLoaderPrivate::addResource(const QUrl & url, const setti
 	return &ro->lo;
 }
 
+LoaderObject * MultiPageLoaderPrivate::addResource(const QUrl & url, const settings::LoadPage & page, const QString & data) {
+	ResourceObject * ro = new ResourceObject(*this, url, page, &data);
+	resources.push_back(ro);
+
+	return &ro->lo;
+}
+
 void MultiPageLoaderPrivate::load() {
 	progressSum=0;
 	loadStartedEmitted=false;
@@ -750,6 +761,10 @@ LoaderObject * MultiPageLoader::addResource(const QString & string, const settin
 */
 LoaderObject * MultiPageLoader::addResource(const QUrl & url, const settings::LoadPage & s) {
 	return d->addResource(url, s);
+}
+
+LoaderObject * MultiPageLoader::addResource(const QUrl & url, const settings::LoadPage & s, const QString & data) {
+	return d->addResource(url, s, data);
 }
 
 /*!
