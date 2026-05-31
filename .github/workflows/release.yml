@@ -40,6 +40,8 @@ jobs:
           path: packaging
       - name: build deb package
         run: make -C wkhtmltopdf release-build-linux-deb PACKAGING_DIR=../packaging RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
+      - name: install and smoke-test deb package
+        run: make -C wkhtmltopdf release-test-linux-deb RELEASE_OUTPUT=../artifacts
       - name: upload deb artifact
         uses: actions/upload-artifact@v4
         with:
@@ -74,6 +76,8 @@ jobs:
           cmd /c attrib "C:\Program Files (x86)\Windows Kits\10\include\wdf" +H
       - name: build exe installer
         run: make -C wkhtmltopdf release-build-windows-exe PACKAGING_DIR=../packaging PYTHON=python RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
+      - name: install and smoke-test exe installer
+        run: make -C wkhtmltopdf release-test-windows-exe PYTHON=python RELEASE_OUTPUT=../artifacts
       - name: upload exe artifact
         uses: actions/upload-artifact@v4
         with:

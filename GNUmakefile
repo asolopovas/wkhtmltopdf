@@ -22,8 +22,10 @@ RELEASE_LINUX_TARGET ?= buster-amd64
 RELEASE_WINDOWS_TARGET ?= msvc2015-win64
 ifeq ($(OS),Windows_NT)
 RELEASE_BUILD_TARGETS ?= release-build-windows-exe
+RELEASE_TEST_TARGETS ?= release-test-windows-exe
 else
 RELEASE_BUILD_TARGETS ?= release-build-linux-deb
+RELEASE_TEST_TARGETS ?= release-test-linux-deb
 endif
 RELEASE_ARGS ?=
 BUMP ?=
@@ -32,7 +34,7 @@ PUSH ?= true
 UPLOAD ?= false
 
 
-.PHONY: all install clean distclean help install-dev configure build shadow-build release release-patch release-minor release-major release-build release-build-all release-build-linux-deb release-build-windows-exe ensure-packaging
+.PHONY: all install clean distclean help install-dev configure build shadow-build release release-patch release-minor release-major release-build release-build-all release-test release-test-all release-build-linux-deb release-build-windows-exe release-test-linux-deb release-test-windows-exe ensure-packaging
 
 all install clean distclean:
 	+@if [ -f "$(QMAKE_MAKEFILE)" ]; then \
@@ -79,6 +81,10 @@ release-build: $(RELEASE_BUILD_TARGETS)
 
 release-build-all: release-build-linux-deb release-build-windows-exe
 
+release-test: $(RELEASE_TEST_TARGETS)
+
+release-test-all: release-test-linux-deb release-test-windows-exe
+
 ensure-packaging:
 	@if [ ! -x "$(PACKAGING_DIR)/build" ]; then \
 		echo "Cloning packaging into $(PACKAGING_DIR)"; \
@@ -101,6 +107,24 @@ release-build-windows-exe: ensure-packaging
 	cp "$(PACKAGING_DIR)"/targets/wkhtmltox*.exe "$(RELEASE_OUTPUT)/windows-exe/"
 	@(cd "$(RELEASE_OUTPUT)" && find windows-exe -maxdepth 1 -type f -print | sort | xargs sha256sum > checksums-windows-exe.txt)
 
+release-test-linux-deb:
+	@package="$$(ls -1 "$(RELEASE_OUTPUT)"/linux-deb/*.deb | head -n1)"; \
+	[ -n "$$package" ] || { echo "release-test: no deb package in $(RELEASE_OUTPUT)/linux-deb" >&2; exit 1; }; \
+	sudo apt-get update; \
+	sudo apt-get install -y "$$package"; \
+	WKHTMLTOPDF_BINARY=/usr/local/bin/wkhtmltopdf \
+	WKHTMLTOIMAGE_BINARY=/usr/local/bin/wkhtmltoimage \
+	$(PYTHON) tests/smoke/smoke.py
+
+release-test-windows-exe:
+	@installer="$$(ls -1 "$(RELEASE_OUTPUT)"/windows-exe/*.exe | head -n1)"; \
+	[ -n "$$installer" ] || { echo "release-test: no exe installer in $(RELEASE_OUTPUT)/windows-exe" >&2; exit 1; }; \
+	if command -v cygpath >/dev/null 2>&1; then installer="$$(cygpath -w "$$installer")"; fi; \
+	INSTALLER="$$installer" powershell -NoProfile -ExecutionPolicy Bypass -Command '$$p = Start-Process -FilePath $$env:INSTALLER -ArgumentList "/S" -Wait -PassThru; if ($$p.ExitCode -ne 0) { exit $$p.ExitCode }'; \
+	WKHTMLTOPDF_BINARY='C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe' \
+	WKHTMLTOIMAGE_BINARY='C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe' \
+	$(PYTHON) tests/smoke/smoke.py
+
 help:
 	@echo "Developer targets:"
 	@echo "  make install-dev           Install local build dependencies (default: QT=5)"
@@ -110,6 +134,7 @@ help:
 	@echo "  make release VERSION_OVERRIDE=0.13.0"
 	@echo "  make release BUMP=patch    Create release commit/tag and build packages"
 	@echo "  make release-build         Build host release package into RELEASE_OUTPUT=$(RELEASE_OUTPUT)"
+	@echo "  make release-test          Install and smoke-test the host release package"
 	@echo "  make release-build-all     Build deb+exe when the host can support both"
 	@echo ""
 	@echo "Normal qmake targets are delegated to $(QMAKE_MAKEFILE) when it exists."
