@@ -71,6 +71,32 @@ void MyNetworkAccessManager::allow(QString path) {
 	allowed.insert(x);
 }
 
+class NetworkDeniedReply: public QNetworkReply {
+public:
+	NetworkDeniedReply(const QNetworkRequest & req, QObject * parent = 0): QNetworkReply(parent) {
+		setRequest(req);
+		setOperation(QNetworkAccessManager::GetOperation);
+		setUrl(req.url());
+		setAttribute(QNetworkRequest::HttpStatusCodeAttribute, 403);
+		setAttribute(QNetworkRequest::HttpReasonPhraseAttribute, "Forbidden");
+		open(QIODevice::ReadOnly);
+		setFinished(true);
+		QTimer::singleShot(0, this, SIGNAL(readyRead()));
+		QTimer::singleShot(0, this, SIGNAL(finished()));
+	}
+
+	virtual void abort() {}
+
+protected:
+	virtual qint64 readData(char *, qint64) {
+		return -1;
+	}
+
+	virtual qint64 writeData(const char *, qint64) {
+		return -1;
+	}
+};
+
 QNetworkReply * MyNetworkAccessManager::createRequest(Operation op, const QNetworkRequest & req, QIODevice * outgoingData) {
 	emit debug(QString("Creating request: ") + req.url().toString());
 
@@ -99,10 +125,8 @@ QNetworkReply * MyNetworkAccessManager::createRequest(Operation op, const QNetwo
 			path = QFileInfo(path).path();
 		}
 		if (!ok) {
-			QNetworkRequest r2 = req;
 			emit warning(QString("Blocked access to file %1").arg(QFileInfo(req.url().toLocalFile()).canonicalFilePath()));
-			r2.setUrl(QUrl("about:blank"));
-			return QNetworkAccessManager::createRequest(op, r2, outgoingData);
+			return new NetworkDeniedReply(req, this);
 		}
 	}
 	QNetworkRequest r3 = req;
