@@ -318,7 +318,7 @@ void PdfCommandLineParser::outputArgsFromStdin(Outputter * o) const {
 	o->paragraph("When --read-args-from-stdin each line of input sent to wkhtmltopdf on stdin "
 				 "will act as a separate invocation of wkhtmltopdf, with the arguments specified "
 				 "on the given line combined with the arguments given to wkhtmltopdf");
-	o->paragraph("For example one could do the following:");
+	o->paragraph("For example, one could do the following:");
 	o->verbatim("echo \"https://doc.qt.io/archives/qt-4.8/qapplication.html qapplication.pdf\" >> cmds\n"
 				"echo \"cover google.com https://en.wikipedia.org/wiki/Qt_(software) qt.pdf\" >> cmds\n"
 				"wkhtmltopdf --read-args-from-stdin --book < cmds\n");
@@ -350,9 +350,9 @@ void PdfCommandLineParser::outputInstallation(Outputter * o) const {
 void PdfCommandLineParser::outputPageSizes(Outputter * o) const {
 	o->beginSection("Page sizes");
 	o->beginParagraph();
-	o->text("The default page size of the rendered document is A4, but by using the --page-size "
-			"option this can be changed to almost anything else, such as: A3, Letter and Legal.  "
-			"For a full list of supported pages sizes please see ");
+	o->text("The default page size of the rendered document is A4, but using the --page-size option "
+			"this can be changed to almost anything else, such as: A3, Letter and Legal. "
+			"For a full list of supported page sizes please see ");
 	o->link("https://doc.qt.io/archives/qt-4.8/qprinter.html#PaperSize-enum");
 	o->text(".");
 	o->endParagraph();
