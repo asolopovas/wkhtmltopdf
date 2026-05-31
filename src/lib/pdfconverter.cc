@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <qapplication.h>
 #include <qfileinfo.h>
+#include "utilities.hh"
 #ifdef Q_OS_WIN32
 #include <fcntl.h>
 #include <io.h>
@@ -590,11 +591,27 @@ void PdfConverterPrivate::findLinks(QWebFrame * frame, QVector<QPair<QWebElement
 					if (!href.hasFragment())
 						e = p->page->mainFrame()->findFirstElement("body");
 					else {
-						e = p->page->mainFrame()->findFirstElement("a[name=\""+href.fragment()+"\"]");
+						QString fragment = href.fragment();
+						QString decodedFragment = QUrl::fromPercentEncoding(fragment.toUtf8());
+						QString escapedFragment = escapeCSS(fragment);
+						QString escapedDecodedFragment = escapeCSS(decodedFragment);
+						QWebFrame * mainFrame = p->page->mainFrame();
+
+						e = mainFrame->findFirstElement("#"+escapedFragment);
 						if (e.isNull())
-							e = p->page->mainFrame()->findFirstElement("*[id=\""+href.fragment()+"\"]");
+							e = mainFrame->findFirstElement("a[name=\""+escapedFragment+"\"]");
 						if (e.isNull())
-							e = p->page->mainFrame()->findFirstElement("*[name=\""+href.fragment()+"\"]");
+							e = mainFrame->findFirstElement("*[id=\""+escapedFragment+"\"]");
+						if (e.isNull())
+							e = mainFrame->findFirstElement("*[name=\""+escapedFragment+"\"]");
+						if (e.isNull() && decodedFragment != fragment)
+							e = mainFrame->findFirstElement("#"+escapedDecodedFragment);
+						if (e.isNull() && decodedFragment != fragment)
+							e = mainFrame->findFirstElement("a[name=\""+escapedDecodedFragment+"\"]");
+						if (e.isNull() && decodedFragment != fragment)
+							e = mainFrame->findFirstElement("*[id=\""+escapedDecodedFragment+"\"]");
+						if (e.isNull() && decodedFragment != fragment)
+							e = mainFrame->findFirstElement("*[name=\""+escapedDecodedFragment+"\"]");
 					}
 					if (!e.isNull()) {
 						p->anchors[href.toString()] = e;

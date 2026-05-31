@@ -25,6 +25,39 @@
 #include <QMetaEnum>
 #include <QNetworkReply>
 
+static QString cssEscapeCodePoint(ushort unicode) {
+	return QString("\\%1 ").arg(unicode, 0, 16);
+}
+
+QString escapeCSS(const QString &input) {
+	QString output;
+	QTextStream outputStream(&output);
+
+	if (input == "-")
+		return QString("\\-");
+
+	for (int i=0; i<input.length(); ++i) {
+		QChar character = input.at(i);
+		ushort unicode = character.unicode();
+
+		if (unicode == 0) {
+			outputStream << QChar(0xFFFD);
+		} else if (unicode <= 0x1F || unicode == 0x7F ||
+				   ((i == 0 || (i == 1 && input[0].unicode() == 0x2D)) && unicode >= 0x30 && unicode <= 0x39)) {
+			outputStream << cssEscapeCodePoint(unicode);
+		} else if (unicode >= 0x80 || unicode == 0x2D || unicode == 0x5F ||
+				   (unicode >= 0x30 && unicode <= 0x39) ||
+				   (unicode >= 0x41 && unicode <= 0x5A) ||
+				   (unicode >= 0x61 && unicode <= 0x7A)) {
+			outputStream << character;
+		} else {
+			outputStream << "\\" << character;
+		}
+	}
+
+	return output;
+}
+
 void loadSvg(QSvgRenderer * & ptr, const QString & path, const char * def, int w, int h) {
 	 delete ptr;
 	 ptr = 0;
