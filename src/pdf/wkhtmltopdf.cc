@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "../shared/commandlinearguments.hh"
 #include "pdfcommandlineparser.hh"
 #include "progressfeedback.hh"
 #include <QCommonStyle>
@@ -178,8 +179,10 @@ int main(int argc, char * argv[]) {
 	//Setup default values in settings
 	//parser.loadDefaults();
 
+	CommandLineArguments commandLine(argc, argv);
+
 	//Parse the arguments
-	parser.parseArguments(argc, (const char**)argv);
+	parser.parseArguments(commandLine.argc(), commandLine.constArgv());
 
 	//Construct QApplication required for printing
 	bool use_graphics=true;
@@ -196,10 +199,10 @@ int main(int argc, char * argv[]) {
 	if (parser.readArgsFromStdin) {
 		char *buff;
 		while ((buff = fgets_large(stdin)) != NULL) {
-			int nargc=argc;
+			int nargc=commandLine.argc();
 			char **nargv;
 			parseString(buff,nargc,&nargv);
-			for (int i=0; i < argc; ++i) nargv[i] = argv[i];
+			for (int i=0; i < commandLine.argc(); ++i) nargv[i] = commandLine.argv()[i];
 
 			PdfGlobal globalSettings;
 			QList<PdfObject> objectSettings;

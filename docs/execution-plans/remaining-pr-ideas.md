@@ -70,18 +70,18 @@ Acceptance:
 
 Source idea: PR #2858.
 
-- [ ] Inspect current command-line parser architecture and identify the narrowest Windows-only conversion point.
-- [ ] Reimplement Unicode argv handling without adding a combined `wkhtmltox` executable.
-- [ ] Preserve current non-Windows argument parsing behavior.
-- [ ] Add unit-level or smoke-style coverage where practical; if Windows execution is unavailable, add a helper-level test or document validation limits.
-- [ ] Validate local Linux build/smoke tests to prevent regressions.
+- [x] Inspect current command-line parser architecture and identify the narrowest Windows-only conversion point.
+- [x] Reimplement Unicode argv handling without adding a combined `wkhtmltox` executable.
+- [x] Preserve current non-Windows argument parsing behavior.
+- [x] Add unit-level or smoke-style coverage where practical; if Windows execution is unavailable, add a helper-level test or document validation limits.
+- [x] Validate local Linux build/smoke tests to prevent regressions.
 - [ ] Commit separately.
 
 Acceptance:
 
-- [ ] Windows builds can receive Unicode paths through Qt/Windows wide arguments instead of lossy local-8-bit conversion.
-- [ ] Non-Windows behavior remains unchanged.
-- [ ] Validation limitations are recorded in the commit/plan.
+- [x] Windows builds can receive Unicode paths through Qt/Windows wide arguments instead of lossy local-8-bit conversion.
+- [x] Non-Windows behavior remains unchanged.
+- [x] Validation limitations are recorded in the commit/plan.
 
 ## Feature 4: CI smoke-test workflow
 

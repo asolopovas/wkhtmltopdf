@@ -106,6 +106,12 @@ def main() -> int:
         run([wkhtmltopdf, "--quiet", simple, pdf], env)
         assert_magic(pdf, PDF_MAGIC)
 
+        unicode_html = tmpdir / "unicode-\u0105.html"
+        unicode_pdf = tmpdir / "unicode-\u0105.pdf"
+        shutil.copyfile(simple, unicode_html)
+        run([wkhtmltopdf, "--quiet", unicode_html, unicode_pdf], env)
+        assert_magic(unicode_pdf, PDF_MAGIC)
+
         margin_pdf = tmpdir / "header-footer-margin.pdf"
         run([
             wkhtmltopdf,

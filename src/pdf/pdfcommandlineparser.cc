@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "../shared/commandlinearguments.hh"
 #include "outputter.hh"
 #include "pdfcommandlineparser.hh"
 #include <qwebframe.h>
@@ -166,7 +167,7 @@ void PdfCommandLineParser::parseArguments(int argc, const char ** argv, bool fro
 				usage(stderr, false);
 				exit(1);
 			}
-			ps.page = QString::fromLocal8Bit(argv[arg++]);
+			ps.page = commandLineArgToQString(argv[arg++]);
 			// parse page options and then override the header/footer settings
 			for (;arg < argc;++arg) {
 				if (argv[arg][0] != '-' || argv[arg][1] == '\0' || defaultMode) break;
@@ -194,8 +195,7 @@ void PdfCommandLineParser::parseArguments(int argc, const char ** argv, bool fro
 					exit(1);
 				}
 			}
-			QByteArray a(argv[arg]);
-			ps.page = QString::fromLocal8Bit(a);
+			ps.page = commandLineArgToQString(argv[arg]);
 			++arg;
 		}
 		for (;arg < argc;++arg) {
@@ -209,5 +209,5 @@ void PdfCommandLineParser::parseArguments(int argc, const char ** argv, bool fro
 		usage(stderr, false);
 		exit(1);
 	}
-	globalSettings.out = QString::fromLocal8Bit(argv[argc-1]);
+	globalSettings.out = commandLineArgToQString(argv[argc-1]);
 }

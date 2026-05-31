@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "../shared/commandlinearguments.hh"
 #include "imagecommandlineparser.hh"
 #include "progressfeedback.hh"
 #include <QApplication>
@@ -41,8 +42,10 @@ int main(int argc, char** argv) {
 	wkhtmltopdf::settings::ImageGlobal settings;
 	//Create a command line parser to parse commandline arguments
 	ImageCommandLineParser parser(settings);
+	CommandLineArguments commandLine(argc, argv);
+
 	//Parse the arguments
-	parser.parseArguments(argc, (const char**)argv);
+	parser.parseArguments(commandLine.argc(), commandLine.constArgv());
 
 
 	bool use_graphics=true;

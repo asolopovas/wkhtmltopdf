@@ -20,6 +20,7 @@
 
 #ifndef __ARGHANDLER_INL__
 #define __ARGHANDLER_INL__
+#include "commandlinearguments.hh"
 #include "commandlineparserbase.hh"
 #include <loadsettings.hh>
 #include <logging.hh>
@@ -83,7 +84,7 @@ struct MapSetter: public DstArgHandler< QList< typename T::T > > {
 		p_t::argn.push_back(valueName);
 	}
 	virtual bool operator() (const char ** args, CommandLineParserBase & cp, char * ps) {
-		p_t::realDst(cp, ps).append( T()(args[0], args[1]) );
+		p_t::realDst(cp, ps).append( T()(commandLineArgToQString(args[0]), commandLineArgToQString(args[1])) );
 		return true;
 	}
 };
@@ -94,7 +95,7 @@ struct StringListSetter: public DstArgHandler<QList<QString> > {
 		p_t::argn.push_back(valueName);
 	}
 	virtual bool operator() (const char ** args, CommandLineParserBase & cp, char * ps) {
-		p_t::realDst(cp, ps).append( args[0] );
+		p_t::realDst(cp, ps).append(commandLineArgToQString(args[0]));
 		return true;
 	}
 };
@@ -197,7 +198,7 @@ typedef SomeSetter<StrTM> StrSetter;
 struct QStrTM: public SomeSetterTM<QString> {
 	static QString strToT(const char * val, bool & ok) {
 		ok=true;
-		return QString::fromLocal8Bit(val);
+		return commandLineArgToQString(val);
 	}
 	static QString TToStr(const QString & t, bool & ok) {
 		ok=!t.isEmpty();

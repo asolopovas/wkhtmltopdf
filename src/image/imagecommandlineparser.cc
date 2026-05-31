@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "../shared/commandlinearguments.hh"
 #include "imagecommandlineparser.hh"
 #include "outputter.hh"
 #include <qwebframe.h>
@@ -115,9 +116,9 @@ void ImageCommandLineParser::parseArguments(int argc, const char ** argv, bool f
 	bool defaultMode=false;
 	for (int i=1; i < argc; ++i) {
         if (i==argc-2 && (argv[i][0] != '-' || argv[i][1] == '\0')) { // the arg before last (in)
-            settings.in = QString::fromLocal8Bit(argv[i]);
+            settings.in = commandLineArgToQString(argv[i]);
         } else if (i==argc-1 && (argv[i][0] != '-' || argv[i][1] == '\0')) { // the last arg (out)
-            settings.out = QString::fromLocal8Bit(argv[i]);
+            settings.out = commandLineArgToQString(argv[i]);
 		} else {
 			parseArg(global, argc, argv, defaultMode, i, 0);
 		}
