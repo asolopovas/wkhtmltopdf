@@ -217,6 +217,7 @@ Headers And Footer Options:
       --footer-line                   Display line above the footer
       --no-footer-line                Do not display line above the footer
                                       (default)
+      --footer-margin <real>          Extra footer reserve margin in mm (default 0)
       --footer-right <text>           Right aligned footer text
       --footer-spacing <real>         Spacing between footer and content in mm
                                       (default 0)
@@ -228,6 +229,7 @@ Headers And Footer Options:
       --header-line                   Display line below the header
       --no-header-line                Do not display line below the header
                                       (default)
+      --header-margin <real>          Extra header reserve margin in mm (default 0)
       --header-right <text>           Right aligned header text
       --header-spacing <real>         Spacing between header and content in mm
                                       (default 0)
