@@ -44,7 +44,7 @@ LoadPage::LoadErrorHandling strToLoadErrorHandling(const char * s, bool * ok) {
 	if (!strcasecmp(s, "abort")) return LoadPage::abort;
 	if (!strcasecmp(s, "skip")) return LoadPage::skip;
 	if (!strcasecmp(s, "ignore")) return LoadPage::ignore;
-	*ok = false;
+	if (ok) *ok = false;
 	return LoadPage::abort;
 }
 
@@ -102,7 +102,7 @@ Proxy strToProxy(const char * proxy, bool * ok) {
 		p.port = QString(val+1).toInt(ok);
 		if (p.port < 0 || p.port > 65535) {
 			p.port = 1080;
-			*ok = false;
+			if (ok) *ok = false;
 		}
 		p.host = QString(proxy).left(val-proxy);
  	}
@@ -147,8 +147,8 @@ LoadPage::LoadPage():
 	loadErrorHandling(abort),
 	mediaLoadErrorHandling(ignore),
 	cacheDir(""),
-	printMediaType(false),
-	proxyHostNameLookup(false) {};
+	proxyHostNameLookup(false),
+	printMediaType(false) {}
 
 }
 }
