@@ -52,8 +52,12 @@ jobs:
                 libqt5svg5-dev \
                 libqt5webkit5-dev \
                 libqt5xmlpatterns5-dev \
+                python3 \
                 qt5-qmake \
                 qtbase5-dev
               qmake CONFIG+=silent
               make -j"$(nproc)"
+              WKHTMLTOPDF_BINARY="$PWD/bin/wkhtmltopdf" \
+                WKHTMLTOIMAGE_BINARY="$PWD/bin/wkhtmltoimage" \
+                python3 tests/smoke/smoke.py
             '

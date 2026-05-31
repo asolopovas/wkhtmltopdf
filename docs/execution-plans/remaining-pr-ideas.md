@@ -21,11 +21,11 @@ Implement the remaining low-priority but useful ideas from screened upstream PRs
 
 ## Acceptance criteria
 
-- [ ] Each recommendation is implemented in its own commit.
-- [ ] Existing smoke tests continue to pass locally.
-- [ ] New/changed behavior has the closest practical test coverage.
-- [ ] Generated or user-facing docs are updated where relevant.
-- [ ] Working tree is clean after commits.
+- [x] Each recommendation is implemented in its own commit.
+- [x] Existing smoke tests continue to pass locally.
+- [x] New/changed behavior has the closest practical test coverage.
+- [x] Generated or user-facing docs are updated where relevant.
+- [x] Working tree is clean after commits.
 
 ## Review findings and implementation decisions
 
@@ -43,7 +43,7 @@ Source ideas: PR #3817, PR #4892.
 - [x] Mirror generated-output updates in `docs/usage/wkhtmltopdf.txt`.
 - [x] Apply narrowly scoped user-facing `Qt` capitalization fixes only where unambiguous.
 - [x] Validate with `git diff --check`.
-- [ ] Commit separately.
+- [x] Commit separately.
 
 Acceptance:
 
@@ -59,7 +59,7 @@ Source idea: PR #5075.
 - [x] Prefer minimal, safe warning fixes over broad signal rewrites.
 - [x] Add/adjust focused tests only if behavior changes; otherwise rely on build diagnostics.
 - [x] Validate with build and smoke tests.
-- [ ] Commit separately.
+- [x] Commit separately.
 
 Acceptance:
 
@@ -75,7 +75,7 @@ Source idea: PR #2858.
 - [x] Preserve current non-Windows argument parsing behavior.
 - [x] Add unit-level or smoke-style coverage where practical; if Windows execution is unavailable, add a helper-level test or document validation limits.
 - [x] Validate local Linux build/smoke tests to prevent regressions.
-- [ ] Commit separately.
+- [x] Commit separately.
 
 Acceptance:
 
@@ -87,26 +87,27 @@ Acceptance:
 
 Source idea: tdunlap607 CI smoke-test commits.
 
-- [ ] Add a focused CI job that builds the existing project layout without packaging/vendoring churn.
-- [ ] Run `tests/smoke/smoke.py` against produced binaries.
-- [ ] Keep caches/artifacts conservative and avoid changing packaging truth.
-- [ ] Validate YAML syntax locally where tooling is available.
-- [ ] Commit separately.
+- [x] Add a focused CI smoke-test path to the existing Qt 5 unpatched job instead of duplicating a build.
+- [x] Run `tests/smoke/smoke.py` against produced binaries.
+- [x] Keep caches/artifacts conservative and avoid changing packaging truth.
+- [x] Validate YAML syntax locally where tooling is available.
+- [x] Commit separately.
 
 Acceptance:
 
-- [ ] CI includes an executable smoke-test path for core binaries.
-- [ ] Workflow remains small and maintainable.
-- [ ] No Qt submodule vendoring or packaging consolidation is introduced.
+- [x] CI includes an executable smoke-test path for core binaries.
+- [x] Workflow remains small and maintainable.
+- [x] No Qt submodule vendoring or packaging consolidation is introduced.
 
 ## Validation log
 
-- [ ] `git diff --check`
-- [ ] `python3 -m py_compile tests/smoke/smoke.py`
-- [ ] `cd build && qmake ../wkhtmltopdf.pro CONFIG+=silent && make -j2`
-- [ ] `WKHTMLTOPDF_BINARY=$PWD/build/bin/wkhtmltopdf WKHTMLTOIMAGE_BINARY=$PWD/build/bin/wkhtmltoimage python3 tests/smoke/smoke.py`
-- [ ] CI YAML validation if available.
+- [x] `git diff --check`
+- [x] `python3 -m py_compile tests/smoke/smoke.py`
+- [x] `cd build && qmake ../wkhtmltopdf.pro CONFIG+=silent && make -j2`
+- [x] `WKHTMLTOPDF_BINARY=$PWD/build/bin/wkhtmltopdf WKHTMLTOIMAGE_BINARY=$PWD/build/bin/wkhtmltoimage python3 tests/smoke/smoke.py`
+- [x] CI YAML validation if available.
 
 ## Progress notes
 
 - 2026-05-31: Plan created before implementation, per request.
+- 2026-05-31: Reviewed source PRs/forks, reimplemented only the focused parts, and kept each recommendation in a separate commit.
