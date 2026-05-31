@@ -62,6 +62,7 @@
  * - \b load.jsdelay The mount of time in milliseconds to wait after a page has done loading until
  *      it is actually printed. E.g. "1200". We will wait this amount of time or until, javascript
  *      calls window.print().
+ * - \b load.baseUrl Base URL for resolving relative resources when HTML is loaded from stdin/API data.
  * - \b load.zoomFactor How much should we zoom in on the content? E.g. "2.2".
  * - \b load.customHeaders TODO
  * - \b load.repertCustomHeaders Should the custom headers be sent all elements loaded instead of

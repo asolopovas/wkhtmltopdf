@@ -17,15 +17,15 @@ Implement the remaining high-value, lower-risk ideas from upstream pull requests
     - [x] Smoke test covers source-string header/footer usage.
     - [x] Build and smoke tests pass.
     - [x] Commit separately.
-- [ ] Feature 2: base/effective URL for HTML supplied via stdin/API.
+- [x] Feature 2: base/effective URL for HTML supplied via stdin/API.
   - Sources: PR #20.
   - Rationale: relative CSS/images should be resolvable when input HTML is supplied as a string.
   - Acceptance:
-    - [ ] Add a narrowly named load/page setting and CLI option.
-    - [ ] Use `QWebFrame::setHtml(data, baseUrl)` only for in-memory HTML.
-    - [ ] Smoke test covers stdin HTML resolving a relative asset.
-    - [ ] Build and smoke tests pass.
-    - [ ] Commit separately.
+    - [x] Add a narrowly named load/page setting and CLI option.
+    - [x] Use `QWebFrame::setHtml(data, baseUrl)` only for in-memory HTML.
+    - [x] Smoke test covers stdin HTML resolving a relative asset.
+    - [x] Build and smoke tests pass.
+    - [x] Commit separately.
 - [ ] Feature 3: improve internal link target placement for non-anchor element IDs.
   - Sources: PR #4961 / #3942.
   - Rationale: links to large elements should land at the element start rather than an imprecise box location.
@@ -53,3 +53,4 @@ Implement the remaining high-value, lower-risk ideas from upstream pull requests
 
 - 2026-05-31: Plan created. Starting Feature 1 first because it is isolated, user-visible, and testable with the current smoke suite.
 - 2026-05-31: Feature 1 implemented with CLI/API settings, one-shot local source caching, and smoke coverage for inline source and `/proc/self/fd` header input.
+- 2026-05-31: Feature 2 implemented with `load.baseUrl` / `--base-url` and smoke coverage for stdin HTML loading a relative CSS file.

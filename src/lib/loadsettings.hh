@@ -85,6 +85,9 @@ struct DLL_PUBLIC LoadPage {
 	//! What window.status value should we wait for
 	QString windowStatus;
 
+	//! Base URL for resolving relative resources in HTML loaded from stdin/API data
+	QString baseUrl;
+
 	//! What zoom factor should we apply when printing
 	// TODO MOVE
 	float zoomFactor;

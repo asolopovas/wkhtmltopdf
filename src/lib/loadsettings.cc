@@ -139,6 +139,7 @@ LoadGlobal::LoadGlobal():
 LoadPage::LoadPage():
 	jsdelay(200),
 	windowStatus(""),
+	baseUrl(""),
 	zoomFactor(1.0),
 	repeatCustomHeaders(false),
 	blockLocalFileAccess(true),

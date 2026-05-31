@@ -48,6 +48,7 @@ def run(
     args: list[Path | str],
     env: dict[str, str],
     pass_fds: tuple[int, ...] = (),
+    input_data: bytes | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     printable = " ".join(str(a) for a in args)
     print(f"+ {printable}")
@@ -58,6 +59,7 @@ def run(
         check=True,
         env=env,
         pass_fds=pass_fds,
+        input=input_data,
     )
 
 
@@ -183,6 +185,28 @@ def main() -> int:
             selector_png,
         ], env)
         assert_png_size(selector_png, 120, 80)
+
+        base_url_png = tmpdir / "base-url.png"
+        stdin_html = b"""
+<!doctype html>
+<html>
+  <head><link rel="stylesheet" href="base-url.css" /></head>
+  <body><div id="target"></div></body>
+</html>
+""".strip()
+        run([
+            wkhtmltoimage,
+            "--quiet",
+            "--format",
+            "png",
+            "--base-url",
+            FIXTURES.as_uri() + "/",
+            "--selector",
+            "#target",
+            "-",
+            base_url_png,
+        ], env, input_data=stdin_html)
+        assert_png_size(base_url_png, 64, 32)
 
     print("smoke tests passed")
     return 0

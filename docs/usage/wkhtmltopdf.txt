@@ -106,6 +106,8 @@ Page Options:
                                       folder to be loaded (repeatable)
       --background                    Do print background (default)
       --no-background                 Do not print background
+      --base-url <url>                Base URL for resolving relative resources
+                                      in HTML loaded from stdin
       --bypass-proxy-for <value>      Bypass proxy for host (repeatable)
       --cache-dir <path>              Web cache directory
       --checkbox-checked-svg <path>   Use this SVG file when rendering checked

@@ -23,6 +23,7 @@
 #include <QFileInfo>
 #include <QNetworkCookie>
 #include <QNetworkDiskCache>
+#include <QTextStream>
 #include <QTimer>
 #include <QUuid>
 #include <QList>
@@ -736,6 +737,9 @@ MultiPageLoader::~MultiPageLoader() {
 LoaderObject * MultiPageLoader::addResource(const QString & string, const settings::LoadPage & s, const QString * data) {
 	QString url=string;
 	if (data && !data->isEmpty()) {
+		if (!s.baseUrl.isEmpty())
+			return addResource(guessUrlFromString(s.baseUrl), s, *data);
+
 		url = d->tempIn.create(".html");
 		QFile tmp(url);
 		if (!tmp.open(QIODevice::WriteOnly) || tmp.write(data->toUtf8())==0) {
@@ -745,6 +749,12 @@ LoaderObject * MultiPageLoader::addResource(const QString & string, const settin
 	} else if (url == "-") {
 		QFile in;
 		in.open(stdin,QIODevice::ReadOnly);
+		if (!s.baseUrl.isEmpty()) {
+			QTextStream stream(&in);
+			stream.setCodec("UTF-8");
+			return addResource(guessUrlFromString(s.baseUrl), s, stream.readAll());
+		}
+
 		url = d->tempIn.create(".html");
 		QFile tmp(url);
 		if (!tmp.open(QIODevice::WriteOnly) || !copyFile(in, tmp)) {
