@@ -41,6 +41,8 @@ struct DLL_PUBLIC CropSettings {
 	int width;
 	//! Cropping height/h dime
 	int height;
+	//! Sentinel for unset crop values
+	static const int DEFAULT;
 };
 
 /*! \brief Class holding all user settings.
@@ -74,6 +76,9 @@ struct DLL_PUBLIC ImageGlobal {
 	QString out;
 	//! The output format
 	QString fmt;
+
+	//! CSS selector for an element to crop around
+	QString selector;
 
 	//! Set the screen width
 	int screenWidth;

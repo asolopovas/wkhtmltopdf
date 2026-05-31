@@ -166,17 +166,41 @@ void ImageConverterPrivate::pagesLoaded(bool ok) {
 	if (!openOk) {
 		emit out.error("Could not write to output file");
 		fail();
+		return;
 	}
 
-	if (settings.crop.left < 0) settings.crop.left = 0;
-	if (settings.crop.top < 0) settings.crop.top = 0;
-	if (settings.crop.width < 0) settings.crop.width = 1000000;
-	if (settings.crop.height < 0) settings.crop.height = 1000000;
-	QRect rect = QRect(QPoint(0,0), loaderObject->page.viewportSize()).intersected(
-		QRect(settings.crop.left,settings.crop.top,settings.crop.width,settings.crop.height));
-	if (rect.width() == 0 || rect.height() == 0) {
+	QRect viewportRect(QPoint(0,0), loaderObject->page.viewportSize());
+	QRect rect;
+	if (!settings.selector.isEmpty()) {
+		QWebElement element = frame->findFirstElement(settings.selector);
+		if (element.isNull()) {
+			emit out.error("No element matched the selector");
+			fail();
+			return;
+		}
+
+		QRect elementRect = element.geometry();
+		int left = settings.crop.left == settings::CropSettings::DEFAULT
+			? 0 : settings.crop.left;
+		int top = settings.crop.top == settings::CropSettings::DEFAULT
+			? 0 : settings.crop.top;
+		int width = settings.crop.width == settings::CropSettings::DEFAULT
+			? elementRect.width() - left : settings.crop.width;
+		int height = settings.crop.height == settings::CropSettings::DEFAULT
+			? elementRect.height() - top : settings.crop.height;
+		rect = viewportRect.intersected(
+			QRect(elementRect.left() + left, elementRect.top() + top, width, height));
+	} else {
+		int left = settings.crop.left < 0 ? 0 : settings.crop.left;
+		int top = settings.crop.top < 0 ? 0 : settings.crop.top;
+		int width = settings.crop.width < 0 ? 1000000 : settings.crop.width;
+		int height = settings.crop.height < 0 ? 1000000 : settings.crop.height;
+		rect = viewportRect.intersected(QRect(left, top, width, height));
+	}
+	if (rect.width() <= 0 || rect.height() <= 0) {
 		emit out.error("Will not output an empty image");
 		fail();
+		return;
 	}
 
 	if (settings.fmt != "svg") {

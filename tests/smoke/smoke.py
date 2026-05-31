@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -32,7 +33,9 @@ def binary(env_name: str, fallback: str) -> Path:
 
 def runtime_env(*executables: Path) -> dict[str, str]:
     env = os.environ.copy()
-    lib_dirs = [ROOT / "bin"]
+    lib_dirs = []
+    lib_dirs.extend(exe.parent for exe in executables)
+    lib_dirs.append(ROOT / "bin")
     lib_dirs.extend(exe.parent.parent / "lib" for exe in executables)
     existing = env.get("LD_LIBRARY_PATH")
     if existing:
@@ -53,6 +56,18 @@ def assert_magic(path: Path, magic: bytes) -> None:
         raise AssertionError(f"{path} has magic {data!r}, expected {magic!r}")
 
 
+def assert_png_size(path: Path, width: int, height: int) -> None:
+    data = path.read_bytes()
+    assert_magic(path, PNG_MAGIC)
+    if len(data) < 24 or data[12:16] != b"IHDR":
+        raise AssertionError(f"{path} is missing a PNG IHDR chunk")
+    actual_width, actual_height = struct.unpack(">II", data[16:24])
+    if (actual_width, actual_height) != (width, height):
+        raise AssertionError(
+            f"{path} is {actual_width}x{actual_height}, expected {width}x{height}"
+        )
+
+
 def main() -> int:
     wkhtmltopdf = binary("WKHTMLTOPDF_BINARY", "wkhtmltopdf")
     wkhtmltoimage = binary("WKHTMLTOIMAGE_BINARY", "wkhtmltoimage")
@@ -67,6 +82,7 @@ def main() -> int:
 
     simple = FIXTURES / "simple.html"
     styled = FIXTURES / "styled.html"
+    selector = FIXTURES / "selector.html"
     header = FIXTURES / "header.html"
     footer = FIXTURES / "footer.html"
 
@@ -97,6 +113,19 @@ def main() -> int:
         png = tmpdir / "styled.png"
         run([wkhtmltoimage, "--quiet", "--format", "png", styled, png], env)
         assert_magic(png, PNG_MAGIC)
+
+        selector_png = tmpdir / "selector.png"
+        run([
+            wkhtmltoimage,
+            "--quiet",
+            "--format",
+            "png",
+            "--selector",
+            "#target",
+            selector,
+            selector_png,
+        ], env)
+        assert_png_size(selector_png, 120, 80)
 
     print("smoke tests passed")
     return 0
