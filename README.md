@@ -22,6 +22,17 @@ make install-dev
 make build
 ```
 
+## Release
+
+Start the maintained line at `0.13.0`, then bump from there:
+
+```sh
+make release VERSION_OVERRIDE=0.13.0
+make release BUMP=patch
+```
+
+Release tags trigger `.github/workflows/release.yml`, which builds and uploads Linux `.deb` and Windows `.exe` packages.
+
 ## Maintenance
 
 Use concise, checked-in knowledge. Review, test, and document AI-assisted changes like any other change.

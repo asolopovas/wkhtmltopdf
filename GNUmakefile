@@ -12,8 +12,27 @@ QMAKE ?= $(shell command -v qmake-qt4 2>/dev/null || command -v qmake 2>/dev/nul
 QMAKE_CONFIG ?= CONFIG+=silent
 QT ?= 5
 DRY_RUN ?=
+PYTHON ?= python3
+PACKAGING_REPO ?= https://github.com/wkhtmltopdf/packaging.git
+PACKAGING_DIR ?= ../packaging
+RELEASE_VERSION ?= $(shell tr -d '[:space:]' < VERSION | sed 's/-.*//')
+RELEASE_ITERATION ?= 1
+RELEASE_OUTPUT ?= releases/$(RELEASE_VERSION)
+RELEASE_LINUX_TARGET ?= buster-amd64
+RELEASE_WINDOWS_TARGET ?= msvc2015-win64
+ifeq ($(OS),Windows_NT)
+RELEASE_BUILD_TARGETS ?= release-build-windows-exe
+else
+RELEASE_BUILD_TARGETS ?= release-build-linux-deb
+endif
+RELEASE_ARGS ?=
+BUMP ?=
+VERSION_OVERRIDE ?=
+PUSH ?= true
+UPLOAD ?= false
 
-.PHONY: all install clean distclean help install-dev configure build shadow-build
+
+.PHONY: all install clean distclean help install-dev configure build shadow-build release release-patch release-minor release-major release-build release-build-all release-build-linux-deb release-build-windows-exe ensure-packaging
 
 all install clean distclean:
 	+@if [ -f "$(QMAKE_MAKEFILE)" ]; then \
@@ -39,12 +58,59 @@ configure:
 build shadow-build: configure
 	$(MAKE) -C "$(BUILD_DIR)"
 
+release:
+	@args="$(RELEASE_ARGS)"; \
+	if [ -n "$(BUMP)" ]; then args="--bump $(BUMP) $$args"; fi; \
+	if [ -n "$(VERSION_OVERRIDE)" ]; then args="--version $(VERSION_OVERRIDE) $$args"; fi; \
+	if [ "$(PUSH)" != "true" ]; then args="--no-push $$args"; fi; \
+	if [ "$(UPLOAD)" = "true" ]; then args="--upload $$args"; fi; \
+	./scripts/release.sh $$args
+
+release-patch:
+	$(MAKE) release BUMP=patch $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
+
+release-minor:
+	$(MAKE) release BUMP=minor $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
+
+release-major:
+	$(MAKE) release BUMP=major $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
+
+release-build: $(RELEASE_BUILD_TARGETS)
+
+release-build-all: release-build-linux-deb release-build-windows-exe
+
+ensure-packaging:
+	@if [ ! -x "$(PACKAGING_DIR)/build" ]; then \
+		echo "Cloning packaging into $(PACKAGING_DIR)"; \
+		git clone --depth 1 "$(PACKAGING_REPO)" "$(PACKAGING_DIR)"; \
+	fi
+
+release-build-linux-deb: ensure-packaging
+	@rm -rf "$(RELEASE_OUTPUT)/linux-deb"
+	@mkdir -p "$(RELEASE_OUTPUT)/linux-deb"
+	@rm -f "$(PACKAGING_DIR)"/targets/wkhtmltox*.deb
+	cd "$(PACKAGING_DIR)" && $(PYTHON) ./build package-docker --clean --iteration "$(RELEASE_ITERATION)" "$(RELEASE_LINUX_TARGET)" "$(abspath .)"
+	cp "$(PACKAGING_DIR)"/targets/wkhtmltox*.deb "$(RELEASE_OUTPUT)/linux-deb/"
+	@(cd "$(RELEASE_OUTPUT)" && find linux-deb -maxdepth 1 -type f -print | sort | xargs sha256sum > checksums-linux-deb.txt)
+
+release-build-windows-exe: ensure-packaging
+	@rm -rf "$(RELEASE_OUTPUT)/windows-exe"
+	@mkdir -p "$(RELEASE_OUTPUT)/windows-exe"
+	@rm -f "$(PACKAGING_DIR)"/targets/wkhtmltox*.exe
+	cd "$(PACKAGING_DIR)" && $(PYTHON) ./build vagrant "$(RELEASE_WINDOWS_TARGET)" --clean --version "$(RELEASE_VERSION)" "$(RELEASE_ITERATION)" "$(abspath .)"
+	cp "$(PACKAGING_DIR)"/targets/wkhtmltox*.exe "$(RELEASE_OUTPUT)/windows-exe/"
+	@(cd "$(RELEASE_OUTPUT)" && find windows-exe -maxdepth 1 -type f -print | sort | xargs sha256sum > checksums-windows-exe.txt)
+
 help:
 	@echo "Developer targets:"
 	@echo "  make install-dev           Install local build dependencies (default: QT=5)"
 	@echo "  make install-dev QT=4      Install legacy Qt 4 build dependencies"
 	@echo "  make install-dev DRY_RUN=1 Print the package install command only"
 	@echo "  make build                 Configure/build in BUILD_DIR=$(BUILD_DIR)"
+	@echo "  make release VERSION_OVERRIDE=0.13.0"
+	@echo "  make release BUMP=patch    Create release commit/tag and build packages"
+	@echo "  make release-build         Build host release package into RELEASE_OUTPUT=$(RELEASE_OUTPUT)"
+	@echo "  make release-build-all     Build deb+exe when the host can support both"
 	@echo ""
 	@echo "Normal qmake targets are delegated to $(QMAKE_MAKEFILE) when it exists."
 

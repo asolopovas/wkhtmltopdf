@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Existing release tag to package, for example 0.13.0'
+        required: true
+        default: '0.13.0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.version || '' }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+
+jobs:
+  linux-deb:
+    name: Build Linux deb
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v5
+        with:
+          path: wkhtmltopdf
+          submodules: true
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
+      - name: checkout packaging
+        uses: actions/checkout@v5
+        with:
+          repository: wkhtmltopdf/packaging
+          path: packaging
+      - name: build deb package
+        run: make -C wkhtmltopdf release-build-linux-deb PACKAGING_DIR=../packaging RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
+      - name: upload deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-deb
+          path: artifacts/**
+          if-no-files-found: error
+
+  windows-exe:
+    name: Build Windows exe
+    runs-on: windows-2025
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v5
+        with:
+          path: wkhtmltopdf
+          submodules: true
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
+      - name: checkout packaging
+        uses: actions/checkout@v5
+        with:
+          repository: wkhtmltopdf/packaging
+          path: packaging
+      - name: setup build environment
+        shell: powershell
+        run: |
+          choco install make nsis vcbuildtools --yes --no-progress --install-arguments="/Full"
+          python -m pip install --upgrade pip "conan<2"
+          cmd /c attrib "C:\Program Files (x86)\Windows Kits\10\include\wdf" +H
+      - name: build exe installer
+        run: make -C wkhtmltopdf release-build-windows-exe PACKAGING_DIR=../packaging PYTHON=python RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
+      - name: upload exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-exe
+          path: artifacts/**
+          if-no-files-found: error
+
+  github-release:
+    name: Upload GitHub release
+    runs-on: ubuntu-24.04
+    needs:
+      - linux-deb
+      - windows-exe
+    steps:
+      - name: download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          target_commitish: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
+          name: wkhtmltox ${{ env.RELEASE_VERSION }}
+          files: artifacts/**
+          fail_on_unmatched_files: true
+          generate_release_notes: true
