@@ -973,9 +973,6 @@ void PdfConverterPrivate::endPrintObject(PageObject & obj) {
 	pageFormElements.clear();
 
 	if (obj.web_printer != 0) {
-		delete obj.web_printer;
-		obj.web_printer = 0;
-
 		painter->restore();
 	}
 
@@ -1021,6 +1018,17 @@ void PdfConverterPrivate::printDocument() {
 		}
 		endPrintObject(objects[objects.size()-1]);
  	}
+
+	// Delete per-object printers after all copies have been processed. When
+	// collating, subsequent copies still need the cached page layout.
+	for (int d=0; d < objects.size(); ++d) {
+		PageObject & obj = objects[d];
+		if (obj.web_printer != 0) {
+			delete obj.web_printer;
+			obj.web_printer = 0;
+		}
+	}
+
 	outline->printOutline(printer);
 
 	if (!settings.dumpOutline.isEmpty()) {
