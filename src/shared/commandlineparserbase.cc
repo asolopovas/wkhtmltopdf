@@ -78,7 +78,7 @@ void CommandLineParserBase::outputSwitches(Outputter * o, bool extended, bool do
 
 const char *CommandLineParserBase::appVersion() const {
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
-	return STRINGIZE(FULL_VERSION) " (with patched qt)";
+	return STRINGIZE(FULL_VERSION) " (with patched Qt)";
 #else
 	return STRINGIZE(FULL_VERSION);
 #endif
@@ -136,7 +136,7 @@ void CommandLineParserBase::parseArg(int sections, const int argc, const char **
 		}
 #ifndef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 		if (j.value()->qthack)
-			fprintf(stderr, "The switch %s is not supported when using unpatched qt and will be ignored.", argv[arg]);
+			fprintf(stderr, "The switch %s is not supported when using unpatched Qt and will be ignored.", argv[arg]);
 #endif
 		//Skip already handled switch arguments
 		arg += j.value()->argn.size();
@@ -169,7 +169,7 @@ void CommandLineParserBase::parseArg(int sections, const int argc, const char **
 			}
 #ifndef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
  			if (k.value()->qthack)
-				fprintf(stderr, "The switch -%c is not supported when using unpatched qt and will be ignored.", argv[c][j]);
+				fprintf(stderr, "The switch -%c is not supported when using unpatched Qt and will be ignored.", argv[c][j]);
 #endif
 			//Skip already handled switch arguments
 			arg += k.value()->argn.size();

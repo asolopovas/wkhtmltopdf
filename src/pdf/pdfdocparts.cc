@@ -73,8 +73,8 @@ void PdfCommandLineParser::outputSynopsis(Outputter * o) const {
 	o->paragraph("A table of contents object inserts a table of contents into the output document.");
 	o->verbatim("toc [TOC OPTION]...");
 	o->beginParagraph();
-	o->text("All options that can be specified for a page object can also be specified for a toc, "
-			"further more the options from the ");
+	o->text("All options that can be specified for a page object can also be specified for a toc; "
+			"furthermore, the options from the ");
 	o->sectionLink("TOC Options");
 	o->text(" section can also be applied. The table of contents is generated via XSLT which means "
 			"that it can be styled to look however you want it to look. To get an idea of how to "
@@ -96,17 +96,17 @@ void PdfCommandLineParser::outputDescripton(Outputter * o) const {
 	o->beginParagraph();
 	o->text("Converts one or more HTML pages into a PDF document, ");
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
-	o->text("using wkhtmltopdf patched qt.");
+	o->text("using wkhtmltopdf patched Qt.");
 #else
 	o->bold("not");
-	o->text(" using wkhtmltopdf patched qt.");
+	o->text(" using wkhtmltopdf patched Qt.");
 #endif
 	o->endParagraph();
 	o->endSection();
 }
 
 /*!
-  Add explanation about reduced functionality without patched qt/webkit
+  Add explanation about reduced functionality without patched Qt/WebKit
   \param o The outputter to output to
   \param sure Is the functionality restricted in this wkhtmltopdf
 */
@@ -251,7 +251,7 @@ void PdfCommandLineParser::outputTableOfContentDoc(Outputter * o) const {
 				 "\"http://wkhtmltopdf.org/outline\", "
 				 "it has a root node called \"outline\" which contains a number of "
 				 "\"item\" nodes. An item can contain any number of items. These are the "
-				 "outline subsections to the section the item represents. A item node "
+				 "outline subsections to the section the item represents. An item node "
 				 "has the following attributes:");
 	o->beginList();
 	o->listItem("\"title\" the name of the section.");
@@ -273,7 +273,7 @@ void PdfCommandLineParser::outputOutlineDoc(Outputter * o) const {
 	o->beginSection("Outlines");
 	o->beginParagraph();
 	o->text(
-		"Wkhtmltopdf with patched qt has support for PDF outlines also known as "
+		"Wkhtmltopdf with patched Qt has support for PDF outlines also known as "
 		"book marks, this can be enabled by specifying the --outline switch. "
 		"The outlines are generated based on the <h?> tags, for an in-depth "
 		"description of how this is done see the ");
@@ -336,9 +336,9 @@ void PdfCommandLineParser::outputArgsFromStdin(Outputter * o) const {
 void PdfCommandLineParser::outputInstallation(Outputter * o) const {
 	o->beginSection("Installation");
 	o->paragraph(
-		"There are several ways to install wkhtmltopdf.  You can download a "
+		"There are several ways to install wkhtmltopdf.  You can download an "
 		"already compiled binary, or you can compile wkhtmltopdf yourself. "
-		"On windows the easiest way to install wkhtmltopdf is to download "
+		"On Windows the easiest way to install wkhtmltopdf is to download "
 		"the latest installer. On Linux you can download the latest static "
 		"binary, however you still need to install some other pieces of "
 		"software, to learn more about this read the static version section "
@@ -360,7 +360,7 @@ void PdfCommandLineParser::outputPageSizes(Outputter * o) const {
 	o->link("https://doc.qt.io/archives/qt-4.8/qprinter.html#PaperSize-enum");
 	o->text(".");
 	o->endParagraph();
-	o->paragraph("For a more fine grained control over the page size the "
+	o->paragraph("For more fine-grained control over the page size, the "
 				 "--page-height and --page-width options may be used");
 	o->endSection();
 }

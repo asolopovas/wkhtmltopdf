@@ -23,7 +23,7 @@
 #include <QFile>
 
 /*!
-  Output the name and version of the program, and also whether we are using a patched qt
+  Output the name and version of the program, and also whether we are using a patched Qt
   \param o The outputter to output to
 */
 void CommandLineParserBase::outputName(Outputter * o) const {

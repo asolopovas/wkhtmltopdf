@@ -1,5 +1,5 @@
 Name:
-  wkhtmltopdf 0.12.6 (with patched qt)
+  wkhtmltopdf 0.12.6 (with patched Qt)
 
 Synopsis:
   wkhtmltopdf [GLOBAL OPTION]... [OBJECT]... <output file>
@@ -32,7 +32,7 @@ Document objects:
 
   toc [TOC OPTION]...
   All options that can be specified for a page object can also be specified for
-  a toc, further more the options from the TOC Options section can also be
+  a toc; furthermore, the options from the TOC Options section can also be
   applied. The table of contents is generated via XSLT which means that it can
   be styled to look however you want it to look. To get an idea of how to do
   this you can dump the default xslt document by supplying the
@@ -259,7 +259,7 @@ Page sizes:
   Letter and Legal. For a full list of supported page sizes please see
   <https://doc.qt.io/archives/qt-4.8/qprinter.html#PaperSize-enum>.
 
-  For a more fine grained control over the page size the --page-height and
+  For more fine-grained control over the page size, the --page-height and
   --page-width options may be used
 
 Reading arguments from stdin:
@@ -271,7 +271,7 @@ Reading arguments from stdin:
   will act as a separate invocation of wkhtmltopdf, with the arguments specified
   on the given line combined with the arguments given to wkhtmltopdf
 
-  For example one could do the following:
+  For example, one could do the following:
 
   echo "https://doc.qt.io/archives/qt-4.8/qapplication.html qapplication.pdf" >> cmds
   echo "cover google.com https://en.wikipedia.org/wiki/Qt_(software) qt.pdf" >> cmds
@@ -362,7 +362,7 @@ Footers And Headers:
   html documents in get fashion.
 
 Outlines:
-  Wkhtmltopdf with patched qt has support for PDF outlines also known as book
+  Wkhtmltopdf with patched Qt has support for PDF outlines also known as book
   marks, this can be enabled by specifying the --outline switch. The outlines
   are generated based on the <h?> tags, for an in-depth description of how this
   is done see the Table Of Contents section. 
@@ -397,7 +397,7 @@ Table Of Contents:
   The XML document is in the namespace "http://wkhtmltopdf.org/outline" it has a
   root node called "outline" which contains a number of "item" nodes. An item
   can contain any number of item. These are the outline subsections to the
-  section the item represents. A item node has the following attributes:
+  section the item represents. An item node has the following attributes:
 
  * "title" the name of the section.
  * "page" the page number the section occurs on.
