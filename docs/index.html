@@ -2,48 +2,44 @@
 layout: default
 ---
 
-<div class="row">
-  <div class="large-12 columns">
-    <img src="images/banner.jpg" alt="wkhtmltopdf" />
-    <hr />
-  </div>
-</div>
+<img src="images/banner.jpg" alt="wkhtmltopdf" />
+<hr />
 
-<div class="row">
-  <div class="small-12 columns">
-    <h2>What is it?</h2>
-    <p>
-      <code>wkhtmltopdf</code> and <code>wkhtmltoimage</code> convert HTML to
-      PDF or images with Qt WebKit. They run headlessly and include a C library.
-    </p>
+<h2>What is it?</h2>
 
-    <h2>Install</h2>
-    <p>
-      Use a prebuilt package from <a href="downloads.html">Downloads</a> or
-      build from
-      <a href="https://github.com/wkhtmltopdf/wkhtmltopdf">source</a>. Packaging
-      lives in
-      <a href="https://github.com/wkhtmltopdf/packaging"
-        >wkhtmltopdf/packaging</a
-      >.
-    </p>
+<p>
+  <code>wkhtmltopdf</code> and <code>wkhtmltoimage</code> convert HTML to PDF or
+  images with Qt WebKit. They run headlessly and include a C library for
+  embedding.
+</p>
 
-    <h2>Use</h2>
-    <pre><code>wkhtmltopdf https://example.com example.pdf</code></pre>
-    <p>
-      See the <a href="usage/wkhtmltopdf.txt">generated CLI manual</a> for
-      options.
-    </p>
+<h2>Get started</h2>
 
-    <h2>Library API</h2>
-    <p>See the <a href="libwkhtmltox">C library documentation</a>.</p>
+<p>
+  Use a prebuilt package from <a href="downloads.html">Downloads</a> or build
+  from <a href="https://github.com/wkhtmltopdf/wkhtmltopdf">source</a>. Official
+  packaging lives in
+  <a href="https://github.com/wkhtmltopdf/packaging">wkhtmltopdf/packaging</a>.
+</p>
 
-    <h2>Security</h2>
-    <p>
-      Do not render untrusted HTML. Read the
-      <a href="status.html">project status</a> and
-      <a href="apparmor.html">AppArmor example</a> before using wkhtmltopdf with
-      risky input.
-    </p>
-  </div>
-</div>
+<pre><code>wkhtmltopdf https://example.com example.pdf</code></pre>
+
+<h2>Documentation</h2>
+
+<ul>
+  <li><a href="docs.html">Documentation index</a></li>
+  <li><a href="usage/wkhtmltopdf.txt">wkhtmltopdf CLI manual</a></li>
+  <li><code>wkhtmltoimage -H</code> for the image CLI manual</li>
+  <li><a href="libwkhtmltox/">C library documentation</a></li>
+  <li><a href="source-guide.html">Source guide</a></li>
+  <li><a href="settings.html">Settings guide</a></li>
+</ul>
+
+<h2>Security</h2>
+
+<p>
+  Do not render untrusted HTML. Read the
+  <a href="status.html">project status</a> and
+  <a href="apparmor.html">AppArmor example</a> before using wkhtmltopdf with
+  risky input.
+</p>
