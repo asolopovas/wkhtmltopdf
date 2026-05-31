@@ -41,6 +41,7 @@ jobs:
             gzip \
             libqt5svg5-dev \
             libqt5webkit5-dev \
+            libqt5xmlpatterns5-dev \
             qt5-qmake \
             qtbase5-dev \
             qttools5-dev-tools \
@@ -88,6 +89,8 @@ jobs:
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-qt5-base
             mingw-w64-ucrt-x86_64-qt5-svg
+            mingw-w64-ucrt-x86_64-qt5-tools
+            mingw-w64-ucrt-x86_64-qt5-xmlpatterns
             mingw-w64-ucrt-x86_64-qtwebkit
       - name: install NSIS
         shell: powershell

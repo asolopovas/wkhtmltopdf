@@ -11,7 +11,19 @@ case "${release_output}" in
     /*) ;;
     *) release_output="${REPO_DIR}/${release_output}" ;;
 esac
-qmake_bin="${QMAKE:-qmake}"
+qmake_bin="${QMAKE:-}"
+if [[ -z "${qmake_bin}" ]]; then
+    for candidate in qmake qmake-qt5 qmake.exe qmake-qt5.exe /ucrt64/bin/qmake-qt5.exe /mingw64/bin/qmake-qt5.exe; do
+        if command -v "${candidate}" >/dev/null 2>&1; then
+            qmake_bin="${candidate}"
+            break
+        fi
+    done
+fi
+if [[ -z "${qmake_bin}" ]]; then
+    echo "qmake not found; install the MSYS2 Qt 5 base package" >&2
+    exit 127
+fi
 make_jobs="${MAKE_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '2')}"
 
 case "${release_version}" in
@@ -38,13 +50,29 @@ if [[ ! -x "${stage_dir}/bin/wkhtmltopdf.exe" || ! -x "${stage_dir}/bin/wkhtmlto
     exit 1
 fi
 
-if command -v windeployqt >/dev/null 2>&1; then
-    windeployqt --release --compiler-runtime "${stage_dir}/bin/wkhtmltopdf.exe"
-    windeployqt --release --compiler-runtime "${stage_dir}/bin/wkhtmltoimage.exe"
-else
-    echo "windeployqt not found" >&2
+windeployqt_bin="${WINDEPLOYQT:-}"
+if [[ -z "${windeployqt_bin}" ]]; then
+    for candidate in windeployqt windeployqt-qt5 windeployqt.exe windeployqt-qt5.exe /ucrt64/bin/windeployqt-qt5.exe /mingw64/bin/windeployqt-qt5.exe; do
+        if command -v "${candidate}" >/dev/null 2>&1; then
+            windeployqt_bin="${candidate}"
+            break
+        fi
+    done
+fi
+if [[ -z "${windeployqt_bin}" ]]; then
+    echo "windeployqt not found; install the MSYS2 Qt 5 tools package" >&2
     exit 127
 fi
+
+# Some MSYS2 Qt 5 windeployqt builds still look specifically for qmake.exe.
+qmake_path="$(command -v "${qmake_bin}")"
+qmake_dir="$(dirname "${qmake_path}")"
+if [[ ! -e "${qmake_dir}/qmake.exe" && -e "${qmake_dir}/qmake-qt5.exe" ]]; then
+    cp "${qmake_dir}/qmake-qt5.exe" "${qmake_dir}/qmake.exe"
+fi
+
+"${windeployqt_bin}" --release --compiler-runtime "${stage_dir}/bin/wkhtmltopdf.exe"
+"${windeployqt_bin}" --release --compiler-runtime "${stage_dir}/bin/wkhtmltoimage.exe"
 
 cp "${REPO_DIR}/LICENSE" "${stage_dir}/LICENSE.txt"
 cp "${REPO_DIR}/README.md" "${stage_dir}/README.txt"
