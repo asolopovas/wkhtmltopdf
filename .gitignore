@@ -1,5 +1,7 @@
 # ignore mac build files
 build/
+build-windows-msys2/
+package/
 *.plist
 *~
 \#*\#

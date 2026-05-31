@@ -20,28 +20,43 @@ concurrency:
 
 env:
   RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+  RELEASE_OUTPUT: artifacts
 
 jobs:
   linux-deb:
-    name: Build Linux deb
+    name: Build Ubuntu 24.04 deb
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
       - name: checkout source
         uses: actions/checkout@v5
         with:
-          path: wkhtmltopdf
-          submodules: true
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
-      - name: checkout packaging
-        uses: actions/checkout@v5
-        with:
-          repository: wkhtmltopdf/packaging
-          path: packaging
+      - name: install stable Qt 5 build packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            dpkg-dev \
+            gzip \
+            libqt5svg5-dev \
+            libqt5webkit5-dev \
+            qt5-qmake \
+            qtbase5-dev \
+            qttools5-dev-tools \
+            xvfb \
+            xfonts-75dpi \
+            xfonts-base
       - name: build deb package
-        run: make -C wkhtmltopdf release-build-linux-deb PACKAGING_DIR=../packaging RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
+        run: scripts/build-linux-deb.sh
       - name: install and smoke-test deb package
-        run: make -C wkhtmltopdf release-test-linux-deb RELEASE_OUTPUT=../artifacts
+        run: |
+          sudo apt-get install -y ./artifacts/linux-deb/*.deb
+          xvfb-run -a python3 tests/smoke/smoke.py
+        env:
+          RELEASE_OUTPUT: artifacts
+          WKHTMLTOPDF_BINARY: /usr/bin/wkhtmltopdf
+          WKHTMLTOIMAGE_BINARY: /usr/bin/wkhtmltoimage
       - name: upload deb artifact
         uses: actions/upload-artifact@v4
         with:
@@ -50,9 +65,9 @@ jobs:
           if-no-files-found: error
 
   windows-exe:
-    name: Build Windows exe
+    name: Build Windows setup exe
     runs-on: windows-2025
-    timeout-minutes: 120
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -60,24 +75,52 @@ jobs:
       - name: checkout source
         uses: actions/checkout@v5
         with:
-          path: wkhtmltopdf
-          submodules: true
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
-      - name: checkout packaging
-        uses: actions/checkout@v5
+      - name: setup MSYS2 with stable Qt 5 packages
+        uses: msys2/setup-msys2@v2
         with:
-          repository: wkhtmltopdf/packaging
-          path: packaging
-      - name: setup build environment
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            git
+            make
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-qt5-base
+            mingw-w64-ucrt-x86_64-qt5-svg
+            mingw-w64-ucrt-x86_64-qtwebkit
+      - name: install NSIS
+        shell: powershell
+        run: choco install nsis --yes --no-progress
+      - name: build Windows application layout
+        shell: msys2 {0}
+        run: scripts/build-windows-msys2.sh
+      - name: build NSIS setup installer
         shell: powershell
         run: |
-          choco install make nsis vcbuildtools --yes --no-progress --install-arguments="/Full"
-          python -m pip install --upgrade pip "conan<2"
-          cmd /c attrib "C:\Program Files (x86)\Windows Kits\10\include\wdf" +H
-      - name: build exe installer
-        run: make -C wkhtmltopdf release-build-windows-exe PACKAGING_DIR=../packaging PYTHON=python RELEASE_VERSION="${RELEASE_VERSION}" RELEASE_OUTPUT=../artifacts
-      - name: install and smoke-test exe installer
-        run: make -C wkhtmltopdf release-test-windows-exe PYTHON=python RELEASE_OUTPUT=../artifacts
+          $ErrorActionPreference = "Stop"
+          $version = $env:RELEASE_VERSION
+          $outDir = Join-Path $PWD "artifacts\windows-exe"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+          $sourceDir = Join-Path $PWD "package\wkhtmltox"
+          $installer = Join-Path $outDir "wkhtmltox-$version-1.windows-ucrt64-installer.exe"
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" "/DVERSION=$version" "/DSOURCE_DIR=$sourceDir" "/DOUT_FILE=$installer" "scripts\wkhtmltox.nsi"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem $outDir -Filter "*.exe" |
+            Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLower())  windows-exe/$([IO.Path]::GetFileName($_.Path))" } |
+            Set-Content -Encoding ascii "artifacts\checksums-windows-exe.txt"
+      - name: install and smoke-test setup installer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installer = Get-ChildItem "artifacts\windows-exe\*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "no installer found" }
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { exit $process.ExitCode }
+          $env:WKHTMLTOPDF_BINARY = "C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+          $env:WKHTMLTOIMAGE_BINARY = "C:\Program Files\wkhtmltopdf\bin\wkhtmltoimage.exe"
+          python tests\smoke\smoke.py
       - name: upload exe artifact
         uses: actions/upload-artifact@v4
         with:
@@ -86,7 +129,7 @@ jobs:
           if-no-files-found: error
 
   github-release:
-    name: Upload GitHub release
+    name: Upload GitHub releases
     runs-on: ubuntu-24.04
     needs:
       - linux-deb
@@ -97,7 +140,7 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      - name: publish release
+      - name: publish versioned release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
@@ -106,3 +149,12 @@ jobs:
           files: artifacts/**
           fail_on_unmatched_files: true
           generate_release_notes: true
+      - name: publish latest tag release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          target_commitish: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.sha }}
+          name: wkhtmltox latest (${{ env.RELEASE_VERSION }})
+          files: artifacts/**
+          fail_on_unmatched_files: true
+          generate_release_notes: false
