@@ -204,6 +204,8 @@ struct DLL_PUBLIC PdfObject {
 
 	bool isTableOfContent;
 
+	bool isCover;
+
 	QString tocXsl;
 
 	QString get(const char * name);
