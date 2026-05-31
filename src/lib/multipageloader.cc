@@ -464,8 +464,8 @@ void ResourceObject::amfinished(QNetworkReply * reply) {
 				.arg(reply->url().toString()).arg(networkStatus).arg(httpStatus).arg(reply->errorString());
 			if (settings.loadErrorHandling == settings::LoadPage::abort) {
 				// XXX: Notify network errors as higher priority than HTTP errors.
-				//      QT's QNetworkReply::NetworkError enum uses values overlapping
-				//      HTTP status codes, so adding 1000 to QT's codes will avoid
+				//      Qt's QNetworkReply::NetworkError enum uses values overlapping
+				//      HTTP status codes, so adding 1000 to Qt's codes will avoid
 				//      confusion. Also a network error at this point will probably mean
 				//      no HTTP access at all, so we want network errors to be reported
 				//      with a higher priority than HTTP ones.
