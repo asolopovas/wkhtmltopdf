@@ -18,7 +18,7 @@ PACKAGING_DIR ?= ../packaging
 RELEASE_VERSION ?= $(shell tr -d '[:space:]' < VERSION | sed 's/-.*//')
 RELEASE_ITERATION ?= 1
 RELEASE_OUTPUT ?= releases/$(RELEASE_VERSION)
-RELEASE_LINUX_TARGET ?= buster-amd64
+RELEASE_LINUX_TARGET ?= bullseye-amd64
 RELEASE_WINDOWS_TARGET ?= msvc2015-win64
 ifeq ($(OS),Windows_NT)
 RELEASE_BUILD_TARGETS ?= release-build-windows-exe
