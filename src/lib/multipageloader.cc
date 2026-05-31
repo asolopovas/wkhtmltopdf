@@ -431,20 +431,25 @@ void ResourceObject::amfinished(QNetworkReply * reply) {
 	int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 	if ((networkStatus != 0 && networkStatus != 5) || (httpStatus > 399 && httpErrorCode == 0))
 	{
-		QFileInfo fi(reply->url().toString());
-		QString extension = fi.completeSuffix().toLower().remove(QRegExp("\\?.*$"));
+		QFileInfo fi(reply->url().path());
+		QString extension = fi.suffix().toLower();
 		bool mediaFile = settings::LoadPage::mediaFilesExtensions.contains(extension);
 		if ( ! mediaFile) {
-			// XXX: Notify network errors as higher priority than HTTP errors.
-			//      QT's QNetworkReply::NetworkError enum uses values overlapping
-			//      HTTP status codes, so adding 1000 to QT's codes will avoid
-			//      confusion. Also a network error at this point will probably mean
-			//      no HTTP access at all, so we want network errors to be reported
-			//      with a higher priority than HTTP ones.
-			//      See: http://doc-snapshot.qt-project.org/4.8/qnetworkreply.html#NetworkError-enum
-			error(QString("Failed to load %1, with network status code %2 and http status code %3 - %4")
-				.arg(reply->url().toString()).arg(networkStatus).arg(httpStatus).arg(reply->errorString()));
-			httpErrorCode = networkStatus > 0 ? (networkStatus + 1000) : httpStatus;
+			QString message = QString("Failed to load %1, with network status code %2 and http status code %3 - %4")
+				.arg(reply->url().toString()).arg(networkStatus).arg(httpStatus).arg(reply->errorString());
+			if (settings.loadErrorHandling == settings::LoadPage::abort) {
+				// XXX: Notify network errors as higher priority than HTTP errors.
+				//      QT's QNetworkReply::NetworkError enum uses values overlapping
+				//      HTTP status codes, so adding 1000 to QT's codes will avoid
+				//      confusion. Also a network error at this point will probably mean
+				//      no HTTP access at all, so we want network errors to be reported
+				//      with a higher priority than HTTP ones.
+				//      See: http://doc-snapshot.qt-project.org/4.8/qnetworkreply.html#NetworkError-enum
+				error(message);
+				httpErrorCode = networkStatus > 0 ? (networkStatus + 1000) : httpStatus;
+			} else {
+				warning(QString("%1 (%2)").arg(message).arg(settings::loadErrorHandlingToStr(settings.loadErrorHandling)));
+			}
 			return;
 		}
 		if (settings.mediaLoadErrorHandling == settings::LoadPage::abort)
