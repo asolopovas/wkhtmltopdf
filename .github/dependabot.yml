@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "bundler"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    groups:
+      github-pages-stack:
+        patterns:
+          - "github-pages"
+          - "jekyll*"
+          - "kramdown*"
+          - "liquid"
+          - "nokogiri"
+          - "rouge"
+          - "sass"
+      ruby-runtime-support:
+        patterns:
+          - "webrick"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5

@@ -1,2 +1,13 @@
-source 'https://rubygems.org'
-gem 'github-pages', group: :jekyll_plugins
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# Match GitHub Pages' published Ruby runtime while allowing compatible local updates.
+ruby ">= 3.3", "< 3.5"
+
+# Keep the local Jekyll environment aligned with GitHub Pages:
+# https://pages.github.com/versions/
+gem "github-pages", "~> 232", group: :jekyll_plugins
+
+# Required for `jekyll serve` on modern Ruby versions where WEBrick is not bundled.
+gem "webrick", "~> 1.9", group: :development
