@@ -16,3 +16,15 @@ Do not render untrusted HTML. If you must, isolate the process and restrict file
 ## Build and packaging
 
 Build and packaging live in <https://github.com/wkhtmltopdf/packaging>.
+
+For local unpatched builds on Debian/Ubuntu, install development packages with:
+
+```bash
+make install-dev
+```
+
+Then use a shadow build to keep generated files out of the source tree:
+
+```bash
+make build
+```

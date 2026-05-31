@@ -20,6 +20,7 @@
 
 #include "commandlineparserbase.hh"
 #include "outputter.hh"
+#include <algorithm>
 #include <qwebframe.h>
 
 bool ahsort(const ArgHandler * a, const ArgHandler * b) {
@@ -56,7 +57,7 @@ void CommandLineParserBase::outputSwitches(Outputter * o, bool extended, bool do
 			if (!extended && handler->extended) continue;
 			display.push_back(handler);
 		}
-		qSort(display.begin(), display.end(), ahsort);
+		std::sort(display.begin(), display.end(), ahsort);
 		if (display.size() == 0) continue;
 		o->beginSection(section);
 		if (!sectionDesc[section].isEmpty()) {

@@ -132,12 +132,12 @@ void OutlinePrivate::dumpChildren(QTextStream & stream, const QList<OutlineItem 
 		for (int i=0; i < level; ++i) stream << "  ";
 		stream << "<item title=\"" << escape(item->value) << "\" page=\"" << (item->page + prefixSum[item->document]+ settings.pageOffset) << "\" link=\"" << escape(item->anchor) << "\" backLink=\"" << escape(item->tocAnchor) << "\"";
 		if (item->children.empty())
-			stream << "/>" << endl;
+			stream << "/>" << '\n';
 		else {
-			stream << ">" << endl;
+			stream << ">" << '\n';
 			dumpChildren(stream, item->children, level+1);
 			for (int i=0; i < level; ++i) stream << "  ";
-			stream << "</item>" << endl;
+			stream << "</item>" << '\n';
 		}
 	}
 }
@@ -151,10 +151,10 @@ void OutlinePrivate::buildPrefixSum() {
 
 void Outline::dump(QTextStream & stream) const {
 	d->buildPrefixSum();
-	stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
-	stream << "<outline xmlns=\"http://wkhtmltopdf.org/outline\">" << endl;
+	stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << '\n';
+	stream << "<outline xmlns=\"http://wkhtmltopdf.org/outline\">" << '\n';
 	d->dumpChildren(stream, d->documentOutlines, 1);
-	stream << "</outline>" << endl;
+	stream << "</outline>" << '\n';
 }
 
 /*!

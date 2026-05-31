@@ -25,6 +25,10 @@
 #include <QDir>
 #include <QFile>
 #include <QPair>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#include <QPageLayout>
+#include <QPageSize>
+#endif
 #include <QPrintEngine>
 #include <QTimer>
 #include <QWebFrame>
@@ -48,6 +52,80 @@ using namespace wkhtmltopdf::settings;
 #define STRINGIZE(x) STRINGIZE_(x)
 
 const qreal PdfConverter::millimeterToPointMultiplier = 3.779527559;
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+static QPageLayout::Unit toPageLayoutUnit(QPrinter::Unit unit) {
+	switch (unit) {
+	case QPrinter::Millimeter: return QPageLayout::Millimeter;
+	case QPrinter::Point: return QPageLayout::Point;
+	case QPrinter::Inch: return QPageLayout::Inch;
+	case QPrinter::Pica: return QPageLayout::Pica;
+	case QPrinter::Didot: return QPageLayout::Didot;
+	case QPrinter::Cicero: return QPageLayout::Cicero;
+	case QPrinter::DevicePixel: return QPageLayout::Point;
+	}
+	return QPageLayout::Point;
+}
+
+static QPageSize::Unit toPageSizeUnit(QPrinter::Unit unit) {
+	switch (unit) {
+	case QPrinter::Millimeter: return QPageSize::Millimeter;
+	case QPrinter::Point: return QPageSize::Point;
+	case QPrinter::Inch: return QPageSize::Inch;
+	case QPrinter::Pica: return QPageSize::Pica;
+	case QPrinter::Didot: return QPageSize::Didot;
+	case QPrinter::Cicero: return QPageSize::Cicero;
+	case QPrinter::DevicePixel: return QPageSize::Point;
+	}
+	return QPageSize::Point;
+}
+#endif
+
+static void setPrinterPageMargins(QPrinter * printer, qreal left, qreal top, qreal right, qreal bottom, QPrinter::Unit unit) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	printer->setPageMargins(QMarginsF(left, top, right, bottom), toPageLayoutUnit(unit));
+#else
+	printer->setPageMargins(left, top, right, bottom, unit);
+#endif
+}
+
+#ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
+static void getPrinterPageMargins(const QPrinter * printer, qreal * left, qreal * top, qreal * right, qreal * bottom, QPrinter::Unit unit) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	QMarginsF margins = printer->pageLayout().margins(toPageLayoutUnit(unit));
+	*left = margins.left();
+	*top = margins.top();
+	*right = margins.right();
+	*bottom = margins.bottom();
+#else
+	printer->getPageMargins(left, top, right, bottom, unit);
+#endif
+}
+#endif
+
+static void setPrinterPageSize(QPrinter * printer, const QSizeF & size, QPrinter::Unit unit) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	printer->setPageSize(QPageSize(size, toPageSizeUnit(unit)));
+#else
+	printer->setPaperSize(size, unit);
+#endif
+}
+
+static void setPrinterPageSize(QPrinter * printer, QPrinter::PageSize pageSize) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	printer->setPageSize(QPageSize(static_cast<QPageSize::PageSizeId>(pageSize)));
+#else
+	printer->setPaperSize(pageSize);
+#endif
+}
+
+static void setPrinterPageOrientation(QPrinter * printer, QPrinter::Orientation orientation) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+	printer->setPageOrientation(static_cast<QPageLayout::Orientation>(orientation));
+#else
+	printer->setOrientation(orientation);
+#endif
+}
 
 DLL_LOCAL QMap<QWebPage *, PageObject *> PageObject::webPageToObject;
 
@@ -283,12 +361,12 @@ QPrinter * PdfConverterPrivate::createPrinter(const QString & tempFile) {
     printer->setResolution(settings.dpi);
 
     if ((settings.size.height.first != -1) && (settings.size.width.first != -1)) {
-        printer->setPaperSize(QSizeF(settings.size.width.first,settings.size.height.first + 100), settings.size.height.second);
+        setPrinterPageSize(printer, QSizeF(settings.size.width.first,settings.size.height.first + 100), settings.size.height.second);
     } else {
-        printer->setPaperSize(settings.size.pageSize);
+        setPrinterPageSize(printer, settings.size.pageSize);
     }
 
-    printer->setOrientation(settings.orientation);
+    setPrinterPageOrientation(printer, settings.orientation);
     printer->setColorMode(settings.colorMode);
     printer->setCreator("wkhtmltopdf " STRINGIZE(FULL_VERSION));
 
@@ -379,22 +457,22 @@ void PdfConverterPrivate::pagesLoaded(bool ok) {
         maxHeaderHeight = std::max(maxHeaderHeight, o.headerReserveHeight);
         maxFooterHeight = std::max(maxFooterHeight, o.footerReserveHeight);
     }
-    printer->setPageMargins(settings.margin.left.first, maxHeaderHeight,
+    setPrinterPageMargins(printer, settings.margin.left.first, maxHeaderHeight,
                                 settings.margin.right.first, maxFooterHeight,
                                 settings.margin.left.second);
 #else
-    printer->setPageMargins(settings.margin.left.first, settings.margin.top.first,
+    setPrinterPageMargins(printer, settings.margin.left.first, settings.margin.top.first,
                                 settings.margin.right.first, settings.margin.bottom.first,
                                 settings.margin.left.second);
 #endif
 
 	if ((settings.size.height.first != -1) && (settings.size.width.first != -1)) {
-		printer->setPaperSize(QSizeF(settings.size.width.first,settings.size.height.first), settings.size.height.second);
+		setPrinterPageSize(printer, QSizeF(settings.size.width.first,settings.size.height.first), settings.size.height.second);
 	} else {
-		printer->setPaperSize(settings.size.pageSize);
+		setPrinterPageSize(printer, settings.size.pageSize);
 	}
 
-	printer->setOrientation(settings.orientation);
+	setPrinterPageOrientation(printer, settings.orientation);
 	printer->setColorMode(settings.colorMode);
 	printer->setCreator("wkhtmltopdf " STRINGIZE(FULL_VERSION));
 
@@ -641,7 +719,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 	settings::PdfObject & s = object.settings;
     // save margin values
     qreal leftMargin, topMargin, rightMargin, bottomMargin;
-    printer->getPageMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin, settings.margin.left.second);
+    getPrinterPageMargins(printer, &leftMargin, &topMargin, &rightMargin, &bottomMargin, settings.margin.left.second);
 	if (hasHeaderFooter) {
 		QHash<QString, QString> parms;
 		fillParms(parms, pageNumber, object);
@@ -696,7 +774,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		header->setPalette(pal);
 		double spacing = s.header.spacing * printer->height() / printer->heightMM();
         // clear vertical margins for proper header rendering
-        printer->setPageMargins(leftMargin, 0, rightMargin, 0, settings.margin.left.second);
+        setPrinterPageMargins(printer, leftMargin, 0, rightMargin, 0, settings.margin.left.second);
 		painter->translate(0, -spacing);
 		QWebPrinter wp(header->mainFrame(), printer, *painter);
 		painter->translate(0,-wp.elementLocation(header->mainFrame()->findFirstElement("body")).second.height());
@@ -714,7 +792,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		}
 		wp.spoolPage(1);
         // restore margins
-        printer->setPageMargins(leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
+        setPrinterPageMargins(printer, leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
 		painter->restore();
 	}
 
@@ -729,7 +807,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		double spacing = s.footer.spacing * printer->height() / printer->heightMM();
 		painter->translate(0, printer->height()+ spacing);
         // clear vertical margins for proper header rendering
-        printer->setPageMargins(leftMargin, 0, rightMargin, 0, settings.margin.left.second);
+        setPrinterPageMargins(printer, leftMargin, 0, rightMargin, 0, settings.margin.left.second);
 
 		QWebPrinter wp(footer->mainFrame(), printer, *painter);
 
@@ -747,7 +825,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		}
 		wp.spoolPage(1);
         // restore margins
-        printer->setPageMargins(leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
+        setPrinterPageMargins(printer, leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
 		painter->restore();
 	}
 
@@ -1030,7 +1108,7 @@ void PdfConverterPrivate::printDocument() {
 	emit out.progressChanged(0);
 
 	qreal leftMargin, topMargin, rightMargin, bottomMargin;
-	printer->getPageMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin, settings.margin.left.second);
+	getPrinterPageMargins(printer, &leftMargin, &topMargin, &rightMargin, &bottomMargin, settings.margin.left.second);
 
 	for (int cc_=0; cc_ < cc; ++cc_) {
 		pageNumber=1;
@@ -1038,7 +1116,7 @@ void PdfConverterPrivate::printDocument() {
 			if (objects[d].settings.isCover) {
 				painter->save();
 				painter->translate(-leftMargin * printer->width() / printer->widthMM(), -topMargin * printer->height() / printer->heightMM());
-				printer->setPageMargins(0, 0, 0, 0, settings.margin.left.second);
+				setPrinterPageMargins(printer, 0, 0, 0, 0, settings.margin.left.second);
 				if (objects[d].web_printer != 0) {
 					/*
 					 * delete objects[d].web_printer here, then in beginPrintObject(objects[d]) will re-create
@@ -1051,7 +1129,7 @@ void PdfConverterPrivate::printDocument() {
 			}
 			beginPrintObject(objects[d]);
 			if (objects[d].settings.isCover) {
-				printer->setPageMargins(leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
+				setPrinterPageMargins(printer, leftMargin, topMargin, rightMargin, bottomMargin, settings.margin.left.second);
 				painter->restore();
 			}
 			// XXX: In some cases nothing gets loaded at all,

@@ -149,7 +149,11 @@ QNetworkReply * MyNetworkAccessManager::createRequest(Operation op, const QNetwo
 			keyFile.close();
 
 			QList<QSslCertificate> chainCerts =
-				QSslCertificate::fromPath(settings.clientSslCrtPath.toLatin1(),  QSsl::Pem, QRegExp::FixedString);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+				QSslCertificate::fromPath(settings.clientSslCrtPath, QSsl::Pem, QSslCertificate::PatternSyntax::FixedString);
+#else
+				QSslCertificate::fromPath(settings.clientSslCrtPath, QSsl::Pem, QRegExp::FixedString);
+#endif
 			QList<QSslCertificate> cas =  sslConfig.caCertificates();
 			cas.append(chainCerts);
 			if(!chainCerts.isEmpty()){
@@ -354,9 +358,10 @@ void ResourceObject::loadFinished(bool ok) {
 	bool isMain = multiPageLoader.isMainLoader;
 
 	// Evaluate extra user supplied javascript for the main loader
-	if (isMain)
+	if (isMain) {
 		foreach (const QString & str, settings.runScript)
 			webPage.mainFrame()->evaluateJavaScript(str);
+	}
 
 	// XXX: If loading failed there's no need to wait
 	//      for javascript on this resource.
@@ -515,9 +520,9 @@ void ResourceObject::load() {
 		foreach (const settings::PostItem & pi, settings.post) {
 			//TODO escape values here
 			postData.append("--");
-			postData.append(boundary);
+			postData.append(boundary.toUtf8());
 			postData.append("\ncontent-disposition: form-data; name=\"");
-			postData.append(pi.name);
+			postData.append(pi.name.toUtf8());
 			postData.append('\"');
 			if (pi.file) {
 				QFile f(pi.value);
@@ -526,19 +531,19 @@ void ResourceObject::load() {
 					multiPageLoader.fail();
 				}
 				postData.append("; filename=\"");
-				postData.append( QFileInfo(pi.value).fileName());
+				postData.append( QFileInfo(pi.value).fileName().toUtf8());
 				postData.append("\"\n\n");
 				postData.append( f.readAll() );
 				//TODO ADD MIME TYPE
 			} else {
 				postData.append("\n\n");
-				postData.append(pi.value);
+				postData.append(pi.value.toUtf8());
 			}
 			postData.append('\n');
 		}
 		if (!postData.isEmpty()) {
 			postData.append("--");
-			postData.append(boundary);
+			postData.append(boundary.toUtf8());
 			postData.append("--\n");
 		}
 	} else {
@@ -597,11 +602,12 @@ void MyCookieJar::loadFromFile(const QString & path) {
 
 void MyCookieJar::saveToFile(const QString & path) {
 	QFile cookieJar(path);
-	if (cookieJar.open(QIODevice::WriteOnly | QIODevice::Text) )
+	if (cookieJar.open(QIODevice::WriteOnly | QIODevice::Text) ) {
 		foreach (const QNetworkCookie & cookie, allCookies()) {
 			cookieJar.write(cookie.toRawForm());
 			cookieJar.write(";\n");
 		}
+	}
 }
 
 void MultiPageLoaderPrivate::loadDone() {

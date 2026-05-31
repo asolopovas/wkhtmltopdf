@@ -26,69 +26,69 @@
 namespace wkhtmltopdf {
 
 void dumpDefaultTOCStyleSheet(QTextStream & stream, settings::TableOfContent & s) {
-    stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl
-		   << "<xsl:stylesheet version=\"2.0\"" << endl
-		   << "                xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"" << endl
-		   << "                xmlns:outline=\"http://wkhtmltopdf.org/outline\"" << endl
-		   << "                xmlns=\"http://www.w3.org/1999/xhtml\">" << endl
-		   << "  <xsl:output doctype-public=\"-//W3C//DTD XHTML 1.0 Strict//EN\"" << endl
-	       << "              doctype-system=\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"" << endl
-		   << "              indent=\"yes\" />" << endl
-		   << "  <xsl:template match=\"outline:outline\">" << endl
-		   << "    <html>" << endl
-		   << "      <head>" << endl
-		   << "        <title>" << s.captionText << "</title>" << endl
-		   << "        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" << endl
-		   << "        <style>" << endl
-		   << "          h1 {" << endl
-		   << "            text-align: center;" << endl
-		   << "            font-size: 20px;" << endl
-		   << "            font-family: arial;" << endl
-		   << "          }" << endl;
+    stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << '\n'
+		   << "<xsl:stylesheet version=\"2.0\"" << '\n'
+		   << "                xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"" << '\n'
+		   << "                xmlns:outline=\"http://wkhtmltopdf.org/outline\"" << '\n'
+		   << "                xmlns=\"http://www.w3.org/1999/xhtml\">" << '\n'
+		   << "  <xsl:output doctype-public=\"-//W3C//DTD XHTML 1.0 Strict//EN\"" << '\n'
+	       << "              doctype-system=\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"" << '\n'
+		   << "              indent=\"yes\" />" << '\n'
+		   << "  <xsl:template match=\"outline:outline\">" << '\n'
+		   << "    <html>" << '\n'
+		   << "      <head>" << '\n'
+		   << "        <title>" << s.captionText << "</title>" << '\n'
+		   << "        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" << '\n'
+		   << "        <style>" << '\n'
+		   << "          h1 {" << '\n'
+		   << "            text-align: center;" << '\n'
+		   << "            font-size: 20px;" << '\n'
+		   << "            font-family: arial;" << '\n'
+		   << "          }" << '\n';
 	if (s.useDottedLines)
-		stream << "          div {border-bottom: 1px dashed rgb(200,200,200);}" << endl;
-	stream << "          span {float: right;}" << endl
-		   << "          li {list-style: none;}" << endl
-		   << "          ul {" << endl
-		   << "            font-size: 20px;" << endl
-		   << "            font-family: arial;" << endl
-		   << "          }" << endl
-		   << "          ul ul {font-size: " << (s.fontScale*100.0) << "%; }" << endl
-		   << "          ul {padding-left: 0em;}" << endl
-		   << "          ul ul {padding-left: " << s.indentation << ";}" << endl
-		   << "          a {text-decoration:none; color: black;}" << endl
-		   << "        </style>" << endl
-		   << "      </head>" << endl
-		   << "      <body>" << endl
-		   << "        <h1>" << s.captionText << "</h1>" << endl
-		   << "        <ul><xsl:apply-templates select=\"outline:item/outline:item\"/></ul>" << endl
-		   << "      </body>" << endl
-		   << "    </html>" << endl
-		   << "  </xsl:template>" << endl
-		   << "  <xsl:template match=\"outline:item\">" << endl
-		   << "    <li>" << endl
-		   << "      <xsl:if test=\"@title!=''\">" << endl
-		   << "        <div>" << endl
-		   << "          <a>" << endl;
+		stream << "          div {border-bottom: 1px dashed rgb(200,200,200);}" << '\n';
+	stream << "          span {float: right;}" << '\n'
+		   << "          li {list-style: none;}" << '\n'
+		   << "          ul {" << '\n'
+		   << "            font-size: 20px;" << '\n'
+		   << "            font-family: arial;" << '\n'
+		   << "          }" << '\n'
+		   << "          ul ul {font-size: " << (s.fontScale*100.0) << "%; }" << '\n'
+		   << "          ul {padding-left: 0em;}" << '\n'
+		   << "          ul ul {padding-left: " << s.indentation << ";}" << '\n'
+		   << "          a {text-decoration:none; color: black;}" << '\n'
+		   << "        </style>" << '\n'
+		   << "      </head>" << '\n'
+		   << "      <body>" << '\n'
+		   << "        <h1>" << s.captionText << "</h1>" << '\n'
+		   << "        <ul><xsl:apply-templates select=\"outline:item/outline:item\"/></ul>" << '\n'
+		   << "      </body>" << '\n'
+		   << "    </html>" << '\n'
+		   << "  </xsl:template>" << '\n'
+		   << "  <xsl:template match=\"outline:item\">" << '\n'
+		   << "    <li>" << '\n'
+		   << "      <xsl:if test=\"@title!=''\">" << '\n'
+		   << "        <div>" << '\n'
+		   << "          <a>" << '\n';
 	if (s.forwardLinks)
-		stream << "            <xsl:if test=\"@link\">" << endl
-			   << "              <xsl:attribute name=\"href\"><xsl:value-of select=\"@link\"/></xsl:attribute>" << endl
-			   << "            </xsl:if>" << endl;
-	stream << "            <xsl:if test=\"@backLink\">" << endl
-		   << "              <xsl:attribute name=\"name\"><xsl:value-of select=\"@backLink\"/></xsl:attribute>" << endl
-		   << "            </xsl:if>" << endl
-		   << "            <xsl:value-of select=\"@title\" /> " << endl
-		   << "          </a>" << endl
-		   << "          <span> <xsl:value-of select=\"@page\" /> </span>" << endl
-		   << "        </div>" << endl
-		   << "      </xsl:if>" << endl
-		   << "      <ul>" << endl
-		   << "        <xsl:comment>added to prevent self-closing tags in QtXmlPatterns</xsl:comment>" << endl
-		   << "        <xsl:apply-templates select=\"outline:item\"/>" << endl
-		   << "      </ul>" << endl
-		   << "    </li>" << endl
-		   << "  </xsl:template>" << endl
-		   << "</xsl:stylesheet>" << endl;
+		stream << "            <xsl:if test=\"@link\">" << '\n'
+			   << "              <xsl:attribute name=\"href\"><xsl:value-of select=\"@link\"/></xsl:attribute>" << '\n'
+			   << "            </xsl:if>" << '\n';
+	stream << "            <xsl:if test=\"@backLink\">" << '\n'
+		   << "              <xsl:attribute name=\"name\"><xsl:value-of select=\"@backLink\"/></xsl:attribute>" << '\n'
+		   << "            </xsl:if>" << '\n'
+		   << "            <xsl:value-of select=\"@title\" /> " << '\n'
+		   << "          </a>" << '\n'
+		   << "          <span> <xsl:value-of select=\"@page\" /> </span>" << '\n'
+		   << "        </div>" << '\n'
+		   << "      </xsl:if>" << '\n'
+		   << "      <ul>" << '\n'
+		   << "        <xsl:comment>added to prevent self-closing tags in QtXmlPatterns</xsl:comment>" << '\n'
+		   << "        <xsl:apply-templates select=\"outline:item\"/>" << '\n'
+		   << "      </ul>" << '\n'
+		   << "    </li>" << '\n'
+		   << "  </xsl:template>" << '\n'
+		   << "</xsl:stylesheet>" << '\n';
 }
 
 }
