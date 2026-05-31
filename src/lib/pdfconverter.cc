@@ -579,10 +579,10 @@ void PdfConverterPrivate::findLinks(QWebFrame * frame, QVector<QPair<QWebElement
 		if (h.startsWith("__WKANCHOR_")) {
 			local.push_back( qMakePair(elm, h) );
 		} else {
-			QUrl href = QUrl::fromEncoded(h.toLocal8Bit());
+			QUrl href = QUrl::fromEncoded(h.toUtf8());
 			if (href.isEmpty()) continue;
 			href=frame->baseUrl().resolved(href);
-			QString key = QUrl::fromPercentEncoding(href.toString(QUrl::RemoveFragment).toLocal8Bit());
+			QString key = QUrl::fromPercentEncoding(href.toString(QUrl::RemoveFragment).toUtf8());
 			if (urlToPageObj.contains(key)) {
 				if (ulocal) {
 					PageObject * p = urlToPageObj[key];
@@ -602,7 +602,7 @@ void PdfConverterPrivate::findLinks(QWebFrame * frame, QVector<QPair<QWebElement
 					}
 				}
 			} else if (uexternal) {
-				external.push_back( qMakePair(elm, settings.resolveRelativeLinks ? QString::fromLocal8Bit(href.toEncoded()) : h) );
+				external.push_back( qMakePair(elm, settings.resolveRelativeLinks ? QString::fromLatin1(href.toEncoded()) : h) );
 			}
 		}
 	}
@@ -693,7 +693,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		}
 		foreach (const p_t & p, external) {
 			QRectF r = wp.elementLocation(p.first).second;
-			painter->addHyperlink(r, QUrl::fromEncoded(p.second.toLocal8Bit()));
+			painter->addHyperlink(r, QUrl::fromEncoded(p.second.toUtf8()));
 		}
 		wp.spoolPage(1);
         // restore margins
@@ -726,7 +726,7 @@ void PdfConverterPrivate::endPage(PageObject & object, bool hasHeaderFooter, int
 		}
 		foreach (const p_t & p, external) {
 			QRectF r = wp.elementLocation(p.first).second;
-			painter->addHyperlink(r, QUrl::fromEncoded(p.second.toLocal8Bit()));
+			painter->addHyperlink(r, QUrl::fromEncoded(p.second.toUtf8()));
 		}
 		wp.spoolPage(1);
         // restore margins
@@ -884,7 +884,7 @@ void PdfConverterPrivate::spoolPage(int page) {
 	for (QVector< QPair<QWebElement,QString> >::iterator i=pageExternalLinks[page+1].begin();
 		 i != pageExternalLinks[page+1].end(); ++i) {
 		QRectF r = webPrinter->elementLocation(i->first).second;
-		painter->addHyperlink(r, QUrl::fromEncoded(i->second.toLocal8Bit()));
+		painter->addHyperlink(r, QUrl::fromEncoded(i->second.toUtf8()));
 	}
 	endPage(objects[currentObject], pageHasHeaderFooter, page, pageNumber);
 	actualPage++;
