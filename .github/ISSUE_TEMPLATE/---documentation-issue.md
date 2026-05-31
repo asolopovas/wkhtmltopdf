@@ -1,8 +1,10 @@
 ---
-name: "\U0001F56E Documentation issue"
-about: Ideas/problems with a documentation.
-
+name: Documentation issue
+about: Missing, stale, or unclear documentation
 ---
 
-**Description**  
-<!-- A clear and concise description of the problem/improvement. -->
+**Page or file**
+
+**Problem**
+
+**Suggested fix**

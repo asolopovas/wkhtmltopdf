@@ -1,13 +1,18 @@
-wkhtmltopdf and wkhtmltoimage
------------------------------
+# wkhtmltopdf and wkhtmltoimage
 
-wkhtmltopdf and wkhtmltoimage are command line tools to render HTML into PDF
-and various image formats using the QT Webkit rendering engine. These run
-entirely "headless" and do not require a display or display service.
+`wkhtmltopdf` and `wkhtmltoimage` render HTML to PDF or images with Qt WebKit. They run headlessly and do not require a display server.
 
-See https://wkhtmltopdf.org for updated documentation.
+## Documentation
 
-## Building
-wkhtmltopdf has its own dedicated repository for building and packaging.
+- User docs: <https://wkhtmltopdf.org>
+- CLI manual: `docs/usage/wkhtmltopdf.txt` or `wkhtmltopdf -H`
+- C API docs: `docs/libwkhtmltox/`
+- Project status and security notes: `docs/status.md`
 
-See https://github.com/wkhtmltopdf/packaging
+## Security
+
+Do not render untrusted HTML. If you must, isolate the process and restrict filesystem/network access; see `docs/apparmor.md`.
+
+## Build and packaging
+
+Build and packaging live in <https://github.com/wkhtmltopdf/packaging>.

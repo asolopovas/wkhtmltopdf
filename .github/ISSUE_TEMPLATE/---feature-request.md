@@ -1,11 +1,12 @@
 ---
-name: "\U0001F680 Feature request"
-about: Ideas for new features and improvements.
-
+name: Feature request
+about: Proposed wkhtmltopdf behavior or API changes
 ---
 
-**Description**
-<!-- A clear and concise description of the new feature. -->
+**Goal**
 
-**Example**  
-<!-- A simple example of the new feature in action. -->
+**Example input/command**
+
+**Expected output**
+
+**Why existing options are insufficient**

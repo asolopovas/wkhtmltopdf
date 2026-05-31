@@ -1,10 +1,8 @@
 ---
-name: "⛔ Packaging issue"
-about: See https://github.com/wkhtmltopdf/packaging for packaging issues.
-
+name: Packaging issue
+about: Use the packaging repository for packages and install failures
 ---
 
-wkhtmltopdf has its own dedicated repository for packaging. Please open your
-packaging-related issue at https://github.com/wkhtmltopdf/packaging
+Packaging issues belong in https://github.com/wkhtmltopdf/packaging.
 
-Thanks!
+Include your OS, package asset, install command, and error output there.

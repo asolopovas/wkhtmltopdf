@@ -4,8 +4,7 @@ layout: default
 
 ## Documentation
 
-At the moment, we only have the [auto generated documentation](usage/wkhtmltopdf.txt) for wkhtmltopdf. This is the same thing you'll get from running `wkhtmltopdf -H`.
-
-## Library Documentation
-
-The C library documentation [is here](libwkhtmltox).
+- [wkhtmltopdf CLI manual](usage/wkhtmltopdf.txt) — generated from `wkhtmltopdf -H`.
+- [C library API](libwkhtmltox/) — generated Doxygen output.
+- [Project status](status.html) — maintenance and security guidance.
+- [AppArmor profile](apparmor.html) — Linux confinement example for higher-risk use.

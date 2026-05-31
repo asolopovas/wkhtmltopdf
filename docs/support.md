@@ -2,18 +2,20 @@
 layout: default
 ---
 
-# Reporting Issues
-
-When reporting an issues, please include the following information:
-
-* `wkhtmltopdf` Version
-* Operating System and Version
-* A detailed description of the issue, along with a test case (with HTML/CSS/JS) to duplicate the issue, so that we can look into it
-
 # Support
 
-Need help? Try the [mailing list](http://groups.google.com/group/wkhtmltopdf-general).
+Questions: use the [mailing list](http://groups.google.com/group/wkhtmltopdf-general) or [Stack Overflow](https://stackoverflow.com/questions/tagged/wkhtmltopdf).
 
-Got an issue? Report it over at [GitHub](https://github.com/wkhtmltopdf/wkhtmltopdf/issues).
+Bugs and feature requests: use [GitHub issues](https://github.com/wkhtmltopdf/wkhtmltopdf/issues).
 
-Follow [@wkhtmltopdf](https://twitter.com/wkhtmltopdf) on Twitter to receive news/updates.
+Include:
+
+- wkhtmltopdf version
+- operating system and version
+- exact command
+- minimal HTML/CSS/JS that reproduces the issue
+- expected and actual output
+
+Packaging issues belong in the [packaging repository](https://github.com/wkhtmltopdf/packaging).
+
+Follow [@wkhtmltopdf](https://twitter.com/wkhtmltopdf) for release news.

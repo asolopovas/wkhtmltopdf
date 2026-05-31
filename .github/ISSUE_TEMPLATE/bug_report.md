@@ -1,22 +1,25 @@
 ---
 name: Bug report
-about: Report errors and problems.
-
+about: Reproducible wkhtmltopdf defects
 ---
 
-**wkhtmltopdf version(s) affected**: x.y.z 
+**Version**
+<!-- wkhtmltopdf x.y.z -->
 
-**OS information**
-<!-- Your OS version -->
+**OS**
+<!-- distribution/version or Windows/macOS version -->
 
-**Description**
-<!-- A clear and concise description of the problem. -->
+**Command**
+```sh
 
-**How to reproduce**
-<!-- Html/css code and/or command line arguments needed to reproduce the problem. -->
+```
 
-**Expected behavior**
-<!-- A clear and concise description of what you expected to happen. -->
+**Minimal input**
+<!-- Attach or paste the smallest HTML/CSS/JS needed to reproduce. -->
 
-**Possible Solution**  
-<!--- Optional: only if you have suggestions on a fix/reason for the bug -->
+**Expected result**
+
+**Actual result**
+
+**Validation notes**
+<!-- Logs, screenshots, PDFs, or workaround if relevant. -->
