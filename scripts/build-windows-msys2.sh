@@ -39,9 +39,25 @@ rm -rf "${build_dir}" "${stage_dir}" "${release_output}/windows-exe"
 mkdir -p "${build_dir}" "${stage_dir}" "${release_output}/windows-exe"
 
 export WKHTMLTOX_VERSION="${release_version}"
+# Keep qmake variables such as INSTALLBASE=/wkhtmltox from being rewritten as
+# Windows paths by MSYS2 argument conversion.
+export MSYS2_ARG_CONV_EXCL="${MSYS2_ARG_CONV_EXCL:-};INSTALLBASE="
 cd "${build_dir}"
 "${qmake_bin}" "${REPO_DIR}/wkhtmltopdf.pro" CONFIG+=release CONFIG+=silent INSTALLBASE=/wkhtmltox
-make -j"${make_jobs}"
+
+# Build the library first and copy any MinGW import library beside the DLL so
+# the application subprojects can resolve -lwkhtmltox.
+make -j"${make_jobs}" sub-src-lib-make_first-ordered
+mkdir -p "${build_dir}/bin"
+mapfile -t import_libs < <(find "${build_dir}/src/lib" -type f \( -name 'libwkhtmltox*.a' -o -name 'wkhtmltox*.a' \) -print | sort -u)
+if [[ "${#import_libs[@]}" -gt 0 ]]; then
+    cp "${import_libs[@]}" "${build_dir}/bin/"
+else
+    echo "no wkhtmltox import library found after library build" >&2
+    find "${build_dir}/src/lib" "${build_dir}/bin" -maxdepth 3 -type f -print >&2 || true
+fi
+
+make -j"${make_jobs}" sub-src-pdf-make_first-ordered sub-src-image-make_first-ordered
 make install INSTALL_ROOT="${REPO_DIR}/package"
 
 if [[ ! -x "${stage_dir}/bin/wkhtmltopdf.exe" || ! -x "${stage_dir}/bin/wkhtmltoimage.exe" ]]; then
