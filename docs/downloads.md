@@ -4,40 +4,32 @@ layout: default
 
 # Downloads
 
-All release assets are hosted in [GitHub releases](https://github.com/wkhtmltopdf/packaging/releases).
+Release assets are in [wkhtmltopdf/packaging releases](https://github.com/wkhtmltopdf/packaging/releases). Current stable series: **0.12.6**; some Linux packages are **0.12.6.1** rebuilds.
 
-Current stable series: **0.12.6**. Some Linux packages use the rebuild version **0.12.6.1**.
+## Choose an asset
 
-## Get a build
+1. Match OS, distribution release, and CPU architecture.
+2. If an exact patch release is missing, try the same major/LTS release.
+3. If no asset fits, ask in the [packaging repository](https://github.com/wkhtmltopdf/packaging).
 
-1. Open the [packaging releases](https://github.com/wkhtmltopdf/packaging/releases).
-2. Choose the newest asset matching your OS, distribution, release, and CPU architecture.
-3. If your exact patch release is missing, try the same distribution major/LTS release.
-4. If your platform is missing, discuss it in the [packaging repository](https://github.com/wkhtmltopdf/packaging).
-
-Do **not** render untrusted HTML. See the [project status](status.html) and [AppArmor example](apparmor.html).
-
-## Build notes
-
-Official packages are built by the separate [packaging project](https://github.com/wkhtmltopdf/packaging). Distribution packages may use unpatched Qt and can behave differently from official patched builds.
-
-Generic Linux binaries are no longer provided. Native packages are safer because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
+Official packages use patched Qt. Distribution packages may use unpatched Qt and differ. Generic Linux binaries are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
 
 ## Archive
 
-Older releases are available from the [wkhtmltopdf releases](https://github.com/wkhtmltopdf/wkhtmltopdf/releases), [packaging releases](https://github.com/wkhtmltopdf/packaging/releases), and [obsolete downloads](https://github.com/wkhtmltopdf/obsolete-downloads/blob/master/README.md). Bug reports should target the latest stable release unless you are reporting a regression.
+Older assets are in [wkhtmltopdf releases](https://github.com/wkhtmltopdf/wkhtmltopdf/releases), [packaging releases](https://github.com/wkhtmltopdf/packaging/releases), and [obsolete downloads](https://github.com/wkhtmltopdf/obsolete-downloads/blob/master/README.md). Report bugs against the latest stable release unless reporting a regression.
 
 ## AWS Lambda
 
-Use the Amazon Linux 2 Lambda zip from the packaging releases. Unzip it into `layer/`, then test locally:
+Use the Amazon Linux 2 Lambda zip. Unzip it into `layer/`, then test:
 
 ```bash
 docker run --rm -v "$PWD/layer:/opt" amazonlinux:2 \
   /bin/bash -lc 'LD_LIBRARY_PATH=/opt/lib FONTCONFIG_PATH=/opt/fonts /opt/bin/wkhtmltopdf https://google.com/ /opt/google.pdf'
 ```
 
-Set `FONTCONFIG_PATH=/opt/fonts` in the Lambda function or layer.
+Set `FONTCONFIG_PATH=/opt/fonts` in Lambda.
 
-## Windows antivirus warning
+## Notes
 
-Symantec `WS.Reputation.1` is a reputation-based false positive for rarely seen files. Verify downloads against GitHub release assets.
+- Security: read [Project status](status.html) and [AppArmor](apparmor.html) before processing risky HTML.
+- Symantec `WS.Reputation.1` is reputation-based; verify Windows downloads against GitHub release assets.

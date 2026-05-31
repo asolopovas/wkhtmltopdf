@@ -1,35 +1,27 @@
 # wkhtmltopdf
 
-`wkhtmltopdf` and `wkhtmltoimage` convert HTML to PDF or images with Qt WebKit.
-They run headlessly and do not require a display server.
+`wkhtmltopdf` and `wkhtmltoimage` convert HTML to PDF or images with Qt WebKit. They run headlessly and include a C library.
 
-## Documentation
+## Docs
 
-- Project website: <https://wkhtmltopdf.org>
-- CLI reference: `docs/usage/wkhtmltopdf.txt`, `wkhtmltopdf -H`, or `wkhtmltoimage -H`
-- C API reference: `docs/libwkhtmltox/`
-- Source guide: `docs/source-guide.md`
-- Settings guide: `docs/settings.md`
-- Project status: `docs/status.md`
+- Website: <https://wkhtmltopdf.org>
+- Docs index: `docs/docs.md`
+- CLI: `docs/usage/wkhtmltopdf.txt`, `wkhtmltopdf -H`, `wkhtmltoimage -H`
+- C API: `docs/libwkhtmltox/`
+- Maintainers: `docs/source-guide.md`, `docs/settings.md`
+- Status and security: `docs/status.md`, `docs/apparmor.md`
 
-## Security
+## Build
 
-Do not render untrusted HTML. If you must, isolate the process and restrict
-filesystem and network access. Start with `docs/status.md` and `docs/apparmor.md`.
+Official packages live in <https://github.com/wkhtmltopdf/packaging>.
 
-## Building
-
-Official package builds live in <https://github.com/wkhtmltopdf/packaging>.
-
-For local unpatched builds on supported systems:
+Local unpatched build:
 
 ```sh
 make install-dev
 make build
 ```
 
-## Maintenance note
+## Maintenance
 
-I plan to make incremental updates to this project with help from AI tools.
-Changes should still be reviewed, tested, and documented. The goal is to make
-wkhtmltopdf easier to maintain, easier to use, and better documented.
+Use concise, checked-in knowledge. Review, test, and document AI-assisted changes like any other change.

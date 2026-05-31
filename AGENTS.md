@@ -1,33 +1,31 @@
 # Agent map
 
-Keep this file short. Put durable knowledge in docs, tests, scripts, schemas, or generated artifacts.
+Use the repo as source of truth. Keep this file as a map; put durable knowledge in docs, tests, scripts, schemas, generated artifacts, or execution plans.
 
-## Sources of truth
+## Sources
 
-- Product/user docs: `docs/`, especially `docs/docs.md`, `docs/downloads.md`, `docs/status.md`, and `docs/support.md`.
-- Generated CLI help: `docs/usage/wkhtmltopdf.txt`.
-- Generated C API docs: `docs/libwkhtmltox/`.
-- Build/package system: <https://github.com/wkhtmltopdf/packaging>.
-- CI expectations: `.github/workflows/official.yml` and `.github/workflows/unpatched.yml`.
+- User docs: `docs/docs.md`, `docs/downloads.md`, `docs/status.md`, `docs/support.md`.
+- Maintainer docs: `docs/source-guide.md`, `docs/settings.md`, `docs/apparmor.md`.
+- Generated outputs: `docs/usage/wkhtmltopdf.txt`, `docs/libwkhtmltox/`.
+- Build/package truth: <https://github.com/wkhtmltopdf/packaging>.
+- CI truth: `.github/workflows/official.yml`, `.github/workflows/unpatched.yml`.
 
-## Work loop
+## Task loop
 
-1. Inspect the repo and existing docs before editing.
-2. Use a small plan for simple work; write an execution plan for risky or multi-step work.
-3. Work in a clean git worktree. Keep task state, generated files, logs, and services isolated.
-4. Implement the smallest change that satisfies the acceptance criteria.
-5. Run the closest local checks; note any unavailable checks.
-6. Self-review the diff for correctness, security, stale docs, and broken links.
+1. Inspect code, docs, and existing generated output.
+2. Use a brief plan; for risky or multi-step work, check in an execution plan with goal, scope, acceptance criteria, progress, decisions, validation, and debt.
+3. Work in an isolated git worktree with disposable env vars, ports, temp dirs, logs, caches, and services.
+4. Make the smallest change that meets acceptance criteria.
+5. Run the closest local check; capture commands, results, and unavailable checks.
+6. Self-review for correctness, security, stale docs, generated-output freshness, and broken links.
 
 ## Validation
 
-Use the narrowest applicable check first, then broaden as needed:
-
-- Qt 4 unpatched build: `qmake-qt4 CONFIG+=silent && make`
-- Qt 5 unpatched build: `qmake CONFIG+=silent && make`
-- Official package builds: use the packaging repo commands mirrored in `.github/workflows/official.yml`.
-- Docs: verify changed links, generated-artifact freshness, and issue-template routing.
+- Qt 4 unpatched: `qmake-qt4 CONFIG+=silent && make`
+- Qt 5 unpatched: `qmake CONFIG+=silent && make`
+- Official packages: mirror `.github/workflows/official.yml` in the packaging repo.
+- Docs: verify links, issue routing, and generated artifacts.
 
 ## Pull requests
 
-Keep PRs small. Include scope, acceptance criteria, validation commands/results, UI or runtime evidence when relevant, and follow-up debt. Escalate only for product judgment, risk, ambiguity, or unavailable validation.
+Keep PRs small. Include summary, acceptance criteria, validation results, runtime evidence when relevant, and follow-up debt. Escalate only for product judgment, risk, ambiguity, or unavailable validation.

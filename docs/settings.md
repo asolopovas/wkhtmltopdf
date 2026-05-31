@@ -5,35 +5,23 @@ title: Settings guide
 
 # Settings guide
 
-wkhtmltopdf has two public settings surfaces:
+wkhtmltopdf has two public settings surfaces: generated CLI help and generated C API Doxygen. Both feed the same C++ settings structures.
 
-- command-line switches, documented in generated usage files;
-- C API string keys, documented in generated Doxygen under `docs/libwkhtmltox/`.
+## Groups
 
-Both surfaces feed the same C++ settings structures. This guide summarizes the
-shared model so users can connect a CLI option, a C API key, and the code that
-implements it.
-
-## Setting groups
-
-| Group | Main source | Used by | Examples |
+| Group | Source | Surface | Examples |
 | --- | --- | --- | --- |
-| PDF globals | `src/lib/pdfsettings.*` | `wkhtmltopdf_global_settings` and global CLI options | `size.pageSize`, `orientation`, `margin.top`, `outline`, `documentTitle` |
-| PDF objects | `src/lib/pdfsettings.*` | `wkhtmltopdf_object_settings` and per-page CLI options | `page`, `header.left`, `footer.right`, `toc.captionText`, `produceForms` |
-| Image globals | `src/lib/imagesettings.*` | image C API settings and `wkhtmltoimage` CLI options | `screenWidth`, `screenHeight`, `fmt`, `crop.left`, `transparent` |
-| Loading | `src/lib/loadsettings.*` | PDF objects and images | `load.jsdelay`, `load.windowStatus`, `load.customHeaders`, `load.proxy`, `load.loadErrorHandling` |
-| Web rendering | `src/lib/websettings.*` | PDF objects and images | `web.background`, `web.enableJavascript`, `web.defaultEncoding`, `web.userStyleSheet` |
+| PDF globals | `src/lib/pdfsettings.*` | global CLI, `wkhtmltopdf_global_settings` | `size.pageSize`, `orientation`, `margin.top`, `outline` |
+| PDF objects | `src/lib/pdfsettings.*` | per-page CLI, `wkhtmltopdf_object_settings` | `page`, `header.left`, `footer.right`, `toc.captionText` |
+| Image globals | `src/lib/imagesettings.*` | `wkhtmltoimage`, image C API | `screenWidth`, `fmt`, `crop.left`, `transparent` |
+| Loading | `src/lib/loadsettings.*` | PDF objects and images | `load.jsdelay`, `load.customHeaders`, `load.proxy` |
+| Web rendering | `src/lib/websettings.*` | PDF objects and images | `web.background`, `web.enableJavascript`, `web.userStyleSheet` |
 
-The command-line parser maps human-friendly switches to these fields in:
+CLI mapping lives in `src/pdf/pdfarguments.cc`, `src/image/imagearguments.cc`, and `src/shared/commonarguments.cc`.
 
-- `src/pdf/pdfarguments.cc` for `wkhtmltopdf`;
-- `src/image/imagearguments.cc` for `wkhtmltoimage`;
-- `src/shared/commonarguments.cc` for options shared by both.
+## C API keys
 
-## C API string keys
-
-The C API uses reflection from `src/lib/reflect.*`. Nested fields are separated
-with dots:
+Reflection in `src/lib/reflect.*` exposes dotted keys:
 
 ```text
 web.enableJavascript
@@ -43,74 +31,36 @@ header.left
 crop.width
 ```
 
-Lists use indexes or helper names. Internally, list reflection accepts indexed
-access such as `[0]`, plus `first`, `last`, `size`, `clear`, and `remove`
-operations. Pair-like values such as custom headers and replacements are stored
-as name/value pairs.
+Lists accept indexed access such as `[0]`, plus helper names such as `first`, `last`, `size`, `clear`, and `remove`. Pair values, including custom headers and replacements, store name/value strings.
 
-Because the C API accepts strings, values are parsed by type:
+Common value forms:
 
-- booleans: `true` or `false`;
-- integers and floats: decimal strings;
-- sizes and margins: unit strings such as `10mm`, `1in`, or `72pt`;
-- load handling: `abort`, `skip`, or `ignore`;
-- proxy: `http://host:port`, `socks5://host:port`, optional credentials, or
-  `None` to bypass proxy use.
+- booleans: `true`, `false`
+- numbers: decimal strings
+- sizes: `10mm`, `1in`, `72pt`
+- load handling: `abort`, `skip`, `ignore`
+- proxy: `http://host:port`, `socks5://host:port`, optional credentials, or `None`
 
-## Loading and security-sensitive settings
+## Security-sensitive loading
 
-Loading options affect network requests, local file access, script execution,
-and cookies. Treat them as security-sensitive when rendering input you do not
-fully control.
+Loading controls network requests, local files, scripts, cookies, and request metadata. Key options include:
 
-Important settings and switches include:
+- local files: `load.blockLocalFileAccess`, `--disable-local-file-access`, `--enable-local-file-access`, `--allow`
+- JavaScript: `load.jsdelay`, `load.windowStatus`, `load.runScript`, `--javascript-delay`, `--window-status`, `--run-script`
+- requests: `load.customHeaders`, `--custom-header`, `--custom-header-propagation`
+- cookies/posts: `load.cookies`, `load.cookieJar`, `load.post`, `--cookie`, `--cookie-jar`, `--post`, `--post-file`
+- failures: `load.loadErrorHandling`, `load.mediaLoadErrorHandling`
 
-- local file access: `load.blockLocalFileAccess`, `--disable-local-file-access`,
-  `--enable-local-file-access`, and repeatable `--allow`;
-- JavaScript timing: `load.jsdelay`, `load.windowStatus`, `--javascript-delay`,
-  and `--window-status`;
-- script injection: repeatable `load.runScript` / `--run-script`;
-- request metadata: `load.customHeaders`, `--custom-header`, and
-  `--custom-header-propagation`;
-- cookies and posts: `load.cookies`, `load.cookieJar`, `load.post`,
-  `--cookie`, `--cookie-jar`, `--post`, and `--post-file`;
-- failures: `load.loadErrorHandling` and `load.mediaLoadErrorHandling`.
+For risky input, isolate the process and allow-list access. See [Project status](status.html) and [AppArmor](apparmor.html).
 
-For risky input, prefer isolation and an allow-list rather than trying to make a
-single option safe. See [Project status](status.html) and
-[AppArmor](apparmor.html).
+## PDF settings
 
-## PDF-specific areas
+PDF has global and per-object levels. Globals cover page size, orientation, margins, output, copies, outline, and image compression. Objects cover input pages, headers/footers, links, forms, TOC behavior, and loading. Header/footer replacements provide page and web-page values; custom replacements extend them. TOC output comes from the outline tree and XSLT (`--dump-default-toc-xsl`, `--xsl-style-sheet`).
 
-PDF output has a global level and a per-object level. Global settings cover page
-size, orientation, margins, output file, copies, outline generation, and image
-compression. Per-object settings cover the input page, headers and footers,
-links, forms, table-of-contents behavior, and object-specific loading.
+## Image settings
 
-Header and footer text can use substitutions such as page number and webpage
-values. The `replacements` list adds custom substitution values.
+Image output has one input and output. Important fields: viewport (`screenWidth`, `screenHeight`), `smartWidth`, crop rectangle, `fmt`, and `transparent` for PNG/SVG backgrounds.
 
-Table-of-contents output is built from the outline tree. The default stylesheet
-can be dumped by `--dump-default-toc-xsl` and customized with
-`--xsl-style-sheet`.
+## Update checklist
 
-## Image-specific areas
-
-Image output uses a single input and a single output. Important image settings
-are:
-
-- `screenWidth` and `screenHeight`, which define the WebKit viewport;
-- `smartWidth`, which can expand the width to fit unbreakable content;
-- `crop.left`, `crop.top`, `crop.width`, and `crop.height`;
-- `fmt`, inferred from the output extension if omitted;
-- `transparent`, which affects PNG and SVG backgrounds.
-
-## Documentation update checklist
-
-When adding or changing a setting:
-
-1. Update the source-level comment near the field or parser entry.
-2. Update the generated CLI usage if a command-line switch changed.
-3. Update generated C API docs if a public setting changed.
-4. Update this guide when the setting belongs to a new group, changes security
-   expectations, or is shared between `wkhtmltopdf` and `wkhtmltoimage`.
+When a setting changes, update nearby source comments/parser text, regenerate affected CLI and C API docs, and update this guide only for new groups, shared behavior, or changed security expectations.
