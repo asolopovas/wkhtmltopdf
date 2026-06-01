@@ -16,6 +16,7 @@ else
 QMAKE ?= $(shell command -v qmake 2>/dev/null)
 endif
 QMAKE_CONFIG ?= CONFIG+=silent
+INSTALLBASE ?= /usr/local
 PROJECT_FILE ?= $(abspath wkhtmltopdf.pro)
 DRY_RUN ?=
 PYTHON ?= python3
@@ -45,13 +46,21 @@ UPLOAD ?= false
 
 .PHONY: all install clean distclean help install-dev configure build shadow-build test check smoke e2e release release-patch release-minor release-major release-build release-build-all release-test release-test-all release-build-linux-deb release-build-windows-exe release-test-linux-deb release-test-windows-exe ensure-packaging
 
-all install clean distclean:
-	+@if [ -f "$(QMAKE_MAKEFILE)" ]; then \
+all: build
+
+install: build
+	$(MAKE) -C "$(BUILD_DIR)" install
+	@if command -v ldconfig >/dev/null 2>&1 && { [ "$(INSTALLBASE)" = "/usr" ] || [ "$(INSTALLBASE)" = "/usr/local" ]; }; then \
+		ldconfig; \
+	fi
+
+clean distclean:
+	+@if [ -f "$(BUILD_DIR)/$(QMAKE_MAKEFILE)" ]; then \
+		exec $(MAKE) -C "$(BUILD_DIR)" $@; \
+	elif [ -f "$(QMAKE_MAKEFILE)" ]; then \
 		exec $(MAKE) -f "$(QMAKE_MAKEFILE)" $@; \
 	else \
-		echo "No qmake-generated $(QMAKE_MAKEFILE) found." >&2; \
-		echo "Run qmake first, preferably from a shadow build directory:" >&2; \
-		echo "  mkdir -p build && cd build && qmake ../wkhtmltopdf.pro CONFIG+=silent && make -j\$$(nproc)" >&2; \
+		echo "No qmake-generated $(QMAKE_MAKEFILE) found in $(BUILD_DIR) or repository root." >&2; \
 		exit 2; \
 	fi
 
@@ -64,7 +73,8 @@ configure:
 		exit 127; \
 	fi
 	mkdir -p "$(BUILD_DIR)"
-	cd "$(BUILD_DIR)" && "$(QMAKE)" "$(PROJECT_FILE)" $(QMAKE_CONFIG)
+	cd "$(BUILD_DIR)" && "$(QMAKE)" "$(PROJECT_FILE)" $(QMAKE_CONFIG) INSTALLBASE="$(INSTALLBASE)"
+	$(MAKE) -C "$(BUILD_DIR)" qmake_all
 
 build shadow-build: configure
 	$(MAKE) -C "$(BUILD_DIR)" -j"$(BUILD_JOBS)"
@@ -142,6 +152,7 @@ release-test-windows-exe:
 
 help:
 	@echo "Developer targets:"
+	@echo "  make install               Build and install the dev version into INSTALLBASE=$(INSTALLBASE)"
 	@echo "  make install-dev           Install local build dependencies (default: QT=5)"
 	@echo "  make install-dev QT=4      Install legacy Qt 4 build dependencies"
 	@echo "  make install-dev DRY_RUN=1 Print the package install command only"
@@ -155,6 +166,7 @@ help:
 	@echo "  make release-build-all     Build deb+exe when the host can support both"
 	@echo ""
 	@echo "Normal qmake targets are delegated to $(QMAKE_MAKEFILE) when it exists."
+	@echo "Set INSTALLBASE=/path to change the install prefix. Run with sudo if needed."
 
 %:
 	+@if [ -f "$(QMAKE_MAKEFILE)" ]; then \

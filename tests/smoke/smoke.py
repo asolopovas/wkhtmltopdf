@@ -2,7 +2,8 @@
 """Black-box smoke tests for built wkhtmltopdf binaries.
 
 Set WKHTMLTOPDF_BINARY and WKHTMLTOIMAGE_BINARY to test installed binaries.
-Otherwise the script uses ./bin/wkhtmltopdf and ./bin/wkhtmltoimage.
+Otherwise the script prefers build/bin/wkhtmltopdf and build/bin/wkhtmltoimage,
+falling back to ./bin for legacy in-source builds.
 """
 
 from __future__ import annotations
@@ -33,14 +34,17 @@ def binary(env_name: str, fallback: str) -> Path:
         if resolved:
             return Path(resolved)
         return Path(value)
-    return ROOT / "bin" / fallback
+
+    for candidate in (ROOT / "build" / "bin" / fallback, ROOT / "bin" / fallback):
+        if candidate.exists():
+            return candidate
+    return ROOT / "build" / "bin" / fallback
 
 
 def runtime_env(*executables: Path) -> dict[str, str]:
     env = os.environ.copy()
     lib_dirs = []
     lib_dirs.extend(exe.parent for exe in executables)
-    lib_dirs.append(ROOT / "bin")
     lib_dirs.extend(exe.parent.parent / "lib" for exe in executables)
     existing = env.get("LD_LIBRARY_PATH")
     if existing:
