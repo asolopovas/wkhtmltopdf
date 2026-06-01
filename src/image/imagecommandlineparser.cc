@@ -53,6 +53,7 @@ void ImageCommandLineParser::usage(FILE * fd, bool extended) const {
 	outputName(o);
 	outputSynopsis(o);
  	outputDescripton(o);
+	outputExamples(o);
 	outputSwitches(o, extended, false);
 	if (extended) {
 		outputProxyDoc(o);

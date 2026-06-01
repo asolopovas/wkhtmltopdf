@@ -80,6 +80,30 @@ struct ReadmeFunc {
 };
 
 /*!
+  Lambda: Generate a shell completion script
+*/
+struct CompletionFunc {
+	bool operator()(const char ** args, CommandLineParserBase & p, char *) {
+		if (!p.outputCompletion(stdout, QString(args[0]))) {
+			fprintf(stderr, "Unsupported shell '%s'. Use one of: bash, zsh, fish.\n", args[0]);
+			exit(1);
+		}
+		exit(0);
+	}
+};
+
+/*!
+  Lambda: Install completion for the active shell
+*/
+struct InstallCompletionFunc {
+	bool operator()(const char **, CommandLineParserBase & p, char *) {
+		if (!p.installCompletion(stdout, stderr))
+			exit(1);
+		exit(0);
+	}
+};
+
+/*!
   Lambda: Call the version method
 */
 struct VersionFunc {
@@ -160,6 +184,8 @@ void CommandLineParserBase::addDocArgs() {
 	addarg("version", 'V' ,"Output version information and exit", new Caller<VersionFunc>());
 	addarg("license", 0 ,"Output license information and exit", new Caller<LicenseFunc>());
 	addarg("extended-help", 'H',"Display more extensive help, detailing less common command switches", new Caller<HelpFunc<true> >());
+	addarg("completion", 0, "Generate shell completion script: bash, zsh or fish", new Caller<CompletionFunc>("shell"));
+	addarg("install-completion", 0, "Install completion for the active shell only", new Caller<InstallCompletionFunc>());
 
 	extended(true);
  	qthack(false);

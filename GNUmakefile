@@ -8,6 +8,7 @@
 
 QMAKE_MAKEFILE ?= Makefile
 BUILD_DIR ?= build
+BUILD_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
 QMAKE ?= $(shell command -v qmake-qt4 2>/dev/null || command -v qmake 2>/dev/null)
 QMAKE_CONFIG ?= CONFIG+=silent
 QT ?= 5
@@ -42,7 +43,7 @@ all install clean distclean:
 	else \
 		echo "No qmake-generated $(QMAKE_MAKEFILE) found." >&2; \
 		echo "Run qmake first, preferably from a shadow build directory:" >&2; \
-		echo "  mkdir -p build && cd build && qmake ../wkhtmltopdf.pro CONFIG+=silent && make" >&2; \
+		echo "  mkdir -p build && cd build && qmake ../wkhtmltopdf.pro CONFIG+=silent && make -j\$$(nproc)" >&2; \
 		exit 2; \
 	fi
 
@@ -58,7 +59,7 @@ configure:
 	cd "$(BUILD_DIR)" && "$(QMAKE)" ../wkhtmltopdf.pro $(QMAKE_CONFIG)
 
 build shadow-build: configure
-	$(MAKE) -C "$(BUILD_DIR)"
+	$(MAKE) -C "$(BUILD_DIR)" -j"$(BUILD_JOBS)"
 
 release:
 	@args="$(RELEASE_ARGS)"; \
@@ -131,7 +132,7 @@ help:
 	@echo "  make install-dev           Install local build dependencies (default: QT=5)"
 	@echo "  make install-dev QT=4      Install legacy Qt 4 build dependencies"
 	@echo "  make install-dev DRY_RUN=1 Print the package install command only"
-	@echo "  make build                 Configure/build in BUILD_DIR=$(BUILD_DIR)"
+	@echo "  make build                 Configure/build in BUILD_DIR=$(BUILD_DIR) with BUILD_JOBS=$(BUILD_JOBS)"
 	@echo "  make release VERSION_OVERRIDE=0.13.0"
 	@echo "  make release BUMP=patch    Create release commit/tag and build packages"
 	@echo "  make release-build         Build host release package into RELEASE_OUTPUT=$(RELEASE_OUTPUT)"

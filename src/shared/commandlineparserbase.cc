@@ -21,6 +21,11 @@
 #include "commandlineparserbase.hh"
 #include "outputter.hh"
 #include <algorithm>
+#include <cstdlib>
+#include <qdir.h>
+#include <qfile.h>
+#include <qset.h>
+#include <qstringlist.h>
 #include <qwebframe.h>
 
 bool ahsort(const ArgHandler * a, const ArgHandler * b) {
@@ -71,6 +76,214 @@ void CommandLineParserBase::outputSwitches(Outputter * o, bool extended, bool do
 		o->endSwitch();
 		o->endSection();
  	}
+}
+
+static QString shellQuote(const QString & value) {
+	QString quoted = value;
+	quoted.replace("'", "'\\''");
+	return "'" + quoted + "'";
+}
+
+static QString completionDescription(const ArgHandler * handler) {
+	QString desc = handler->getDesc();
+	desc.replace('\n', ' ');
+	desc.replace('\r', ' ');
+	desc.replace('[', '(');
+	desc.replace(']', ')');
+	return desc;
+}
+
+static QString envValue(const char * name) {
+	const char * value = getenv(name);
+	return value ? QString::fromLocal8Bit(value) : QString();
+}
+
+static QString currentShellName() {
+	QString shell = envValue("SHELL");
+	int slash = shell.lastIndexOf('/');
+	if (slash >= 0)
+		shell = shell.mid(slash + 1);
+	if (shell.endsWith(".exe", Qt::CaseInsensitive))
+		shell.chop(4);
+	return shell;
+}
+
+bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) const {
+	const QString app = appName();
+	QList<const ArgHandler *> handlers;
+	QSet<QString> seen;
+	foreach (const QString & section, sections) {
+		foreach (const ArgHandler * handler, sectionArgumentHandles[section]) {
+			if (!handler->display || seen.contains(handler->longName)) continue;
+			seen.insert(handler->longName);
+			handlers.push_back(handler);
+		}
+	}
+	std::sort(handlers.begin(), handlers.end(), ahsort);
+
+	if (shell == "bash") {
+		QStringList words;
+		foreach (const ArgHandler * handler, handlers) {
+			words << "--" + handler->longName;
+			if (handler->shortSwitch != 0)
+				words << "-" + QString(QChar(handler->shortSwitch));
+		}
+		if (app == "wkhtmltopdf")
+			words << "page" << "cover" << "toc";
+
+		fprintf(fd,
+			"# bash completion for %s\n"
+			"_%s_completion()\n"
+			"{\n"
+			"    local cur prev opts\n"
+			"    COMPREPLY=()\n"
+			"    cur=${COMP_WORDS[COMP_CWORD]}\n"
+			"    prev=${COMP_WORDS[COMP_CWORD-1]}\n"
+			"    opts=%s\n"
+			"\n"
+			"    case \"$prev\" in\n"
+			"        --completion) COMPREPLY=( $(compgen -W \"bash zsh fish\" -- \"$cur\") ); return 0 ;;\n"
+			"        --log-level) COMPREPLY=( $(compgen -W \"none error warn info debug\" -- \"$cur\") ); return 0 ;;\n"
+			"        --load-error-handling|--load-media-error-handling) COMPREPLY=( $(compgen -W \"abort ignore skip\" -- \"$cur\") ); return 0 ;;\n"
+			"        --orientation|-O) COMPREPLY=( $(compgen -W \"Portrait Landscape\" -- \"$cur\") ); return 0 ;;\n"
+			"        --format|-f) COMPREPLY=( $(compgen -W \"jpg jpeg png bmp svg\" -- \"$cur\") ); return 0 ;;\n"
+			"    esac\n"
+			"\n"
+			"    if [[ $cur == -* ]]; then\n"
+			"        COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )\n"
+			"        return 0\n"
+			"    fi\n"
+			"\n"
+			"    COMPREPLY=( $(compgen -f -- \"$cur\") )\n"
+			"    return 0\n"
+			"}\n"
+			"complete -F _%s_completion %s\n",
+			app.toLocal8Bit().constData(), app.toLocal8Bit().constData(),
+			shellQuote(words.join(" ")).toLocal8Bit().constData(),
+			app.toLocal8Bit().constData(), app.toLocal8Bit().constData());
+		return true;
+	}
+
+	if (shell == "zsh") {
+		fprintf(fd,
+			"#compdef %s\n"
+			"# zsh completion for %s\n"
+			"_%s() {\n"
+			"  _arguments -s \\\n",
+			app.toLocal8Bit().constData(), app.toLocal8Bit().constData(), app.toLocal8Bit().constData());
+		foreach (const ArgHandler * handler, handlers) {
+			QString desc = completionDescription(handler);
+			QString suffix = handler->argn.size() ? ":" + handler->argn[0] + ":_files" : "";
+			if (handler->longName == "completion")
+				suffix = ":shell:(bash zsh fish)";
+			else if (handler->longName == "log-level")
+				suffix = ":level:(none error warn info debug)";
+			else if (handler->longName == "load-error-handling" || handler->longName == "load-media-error-handling")
+				suffix = ":handler:(abort ignore skip)";
+			else if (handler->longName == "orientation")
+				suffix = ":orientation:(Portrait Landscape)";
+			else if (handler->longName == "format")
+				suffix = ":format:(jpg jpeg png bmp svg)";
+			QString longSpec = "--" + handler->longName + "[" + desc + "]" + suffix;
+			fprintf(fd, "    %s \\\n", shellQuote(longSpec).toLocal8Bit().constData());
+			if (handler->shortSwitch != 0) {
+				QString shortSpec = "-" + QString(QChar(handler->shortSwitch)) + "[" + desc + "]" + suffix;
+				fprintf(fd, "    %s \\\n", shellQuote(shortSpec).toLocal8Bit().constData());
+			}
+		}
+		if (app == "wkhtmltopdf")
+			fprintf(fd, "    '(page cover toc)'{page,cover,toc}'[document object]' \\\n");
+		fprintf(fd, "    '*:file:_files'\n}\n_%s \"$@\"\n", app.toLocal8Bit().constData());
+		return true;
+	}
+
+	if (shell == "fish") {
+		fprintf(fd, "# fish completion for %s\n", app.toLocal8Bit().constData());
+		if (app == "wkhtmltopdf") {
+			fprintf(fd, "complete -c %s -f -a page -d 'PDF page object'\n", app.toLocal8Bit().constData());
+			fprintf(fd, "complete -c %s -f -a cover -d 'PDF cover object'\n", app.toLocal8Bit().constData());
+			fprintf(fd, "complete -c %s -f -a toc -d 'PDF table of contents object'\n", app.toLocal8Bit().constData());
+		}
+		foreach (const ArgHandler * handler, handlers) {
+			QString line = "complete -c " + app + " -l " + handler->longName;
+			if (handler->shortSwitch != 0)
+				line += " -s " + QString(QChar(handler->shortSwitch));
+			if (handler->argn.size())
+				line += " -r";
+			line += " -d " + shellQuote(completionDescription(handler));
+			if (handler->longName == "completion")
+				line += " -a 'bash zsh fish'";
+			else if (handler->longName == "log-level")
+				line += " -a 'none error warn info debug'";
+			else if (handler->longName == "load-error-handling" || handler->longName == "load-media-error-handling")
+				line += " -a 'abort ignore skip'";
+			else if (handler->longName == "orientation")
+				line += " -a 'Portrait Landscape'";
+			else if (handler->longName == "format")
+				line += " -a 'jpg jpeg png bmp svg'";
+			fprintf(fd, "%s\n", line.toLocal8Bit().constData());
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool CommandLineParserBase::installCompletion(FILE * out, FILE * err) const {
+	QString shell = currentShellName();
+	if (shell != "bash" && shell != "zsh" && shell != "fish") {
+		fprintf(err, "Unsupported or unknown active shell '%s'. Use --completion <bash|zsh|fish> to generate a script manually.\n",
+			shell.isEmpty() ? "" : shell.toLocal8Bit().constData());
+		return false;
+	}
+
+	QString home = envValue("HOME");
+	if (home.isEmpty()) {
+		fprintf(err, "HOME is not set; cannot choose a user completion directory.\n");
+		return false;
+	}
+
+	QString path;
+	if (shell == "bash") {
+		QString dataHome = envValue("XDG_DATA_HOME");
+		if (dataHome.isEmpty()) dataHome = home + "/.local/share";
+		path = dataHome + "/bash-completion/completions/" + appName();
+	} else if (shell == "fish") {
+		QString configHome = envValue("XDG_CONFIG_HOME");
+		if (configHome.isEmpty()) configHome = home + "/.config";
+		path = configHome + "/fish/completions/" + appName() + ".fish";
+	} else {
+		QString zdotdir = envValue("ZDOTDIR");
+		if (zdotdir.isEmpty()) zdotdir = home;
+		path = zdotdir + "/.zfunc/_" + appName();
+	}
+
+	int slash = path.lastIndexOf('/');
+	QString dir = slash >= 0 ? path.left(slash) : QString(".");
+	if (!QDir().mkpath(dir)) {
+		fprintf(err, "Could not create completion directory: %s\n", dir.toLocal8Bit().constData());
+		return false;
+	}
+
+	FILE * fd = fopen(QFile::encodeName(path).constData(), "wb");
+	if (!fd) {
+		fprintf(err, "Could not write completion file: %s\n", path.toLocal8Bit().constData());
+		return false;
+	}
+
+	bool ok = outputCompletion(fd, shell);
+	if (fclose(fd) != 0)
+		ok = false;
+	if (!ok) {
+		fprintf(err, "Could not install %s completion.\n", shell.toLocal8Bit().constData());
+		return false;
+	}
+
+	fprintf(out, "Installed %s completion for %s to %s\n",
+		shell.toLocal8Bit().constData(), appName().toLocal8Bit().constData(), path.toLocal8Bit().constData());
+	if (shell == "zsh")
+		fprintf(out, "Ensure this directory is in fpath, for example: fpath=(%s $fpath)\n", dir.toLocal8Bit().constData());
+	return true;
 }
 
 #define STRINGIZE_(x) #x

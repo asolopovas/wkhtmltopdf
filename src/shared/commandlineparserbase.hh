@@ -74,6 +74,8 @@ public:
 
 	//commandlineparserbase.cc
 	void outputSwitches(Outputter * o, bool extended, bool doc) const;
+	bool outputCompletion(FILE * fd, const QString & shell) const;
+	bool installCompletion(FILE * out, FILE * err) const;
 	virtual char * mapAddress(char * d, char *) const {return d;}
 	virtual void license(FILE * fd) const;
 	virtual void version(FILE * fd) const;

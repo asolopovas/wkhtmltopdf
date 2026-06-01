@@ -17,6 +17,24 @@ Maintainer map for source areas not obvious from generated CLI or C API docs.
 - `docs/usage/`, `docs/libwkhtmltox/` — generated CLI and C API docs.
 - Packaging — maintained in [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
 
+## Build
+
+Local builds should use all available CPU threads. The convenience target does this by default via `BUILD_JOBS=$(nproc)`:
+
+```sh
+make install-dev
+make build
+```
+
+Manual qmake builds should also pass the available job count:
+
+```sh
+mkdir -p build
+cd build
+qmake ../wkhtmltopdf.pro CONFIG+=silent
+make -j"$(nproc)"
+```
+
 ## Conversion flow
 
 1. CLI parsers or C API calls fill settings structures.

@@ -40,8 +40,8 @@ void ImageCommandLineParser::outputManName(Outputter * o) const {
   \param o The outputter to output to
 */
 void ImageCommandLineParser::outputSynopsis(Outputter * o) const {
-	o->beginSection("Synopsis");
-	o->verbatim("wkhtmltoimage [OPTIONS]... <input file> <output file>\n");
+	o->beginSection("Usage");
+	o->verbatim("wkhtmltoimage [OPTION]... <input url/file> <output image>\n");
 	o->endSection();
 }
 
@@ -51,9 +51,7 @@ void ImageCommandLineParser::outputSynopsis(Outputter * o) const {
 */
 void ImageCommandLineParser::outputDescripton(Outputter * o) const {
 	o->beginSection("Description");
-	o->beginParagraph();
-	o->text("Converts an HTML page into an image, ");
-	o->endParagraph();
+	o->paragraph("Convert HTML from a URL, local file or stdin into an image.");
 	o->endSection();
 }
 
@@ -113,14 +111,14 @@ void ImageCommandLineParser::outputInstallation(Outputter * o) const {
 */
 void ImageCommandLineParser::outputExamples(Outputter * o) const {
 	o->beginSection("Examples");
-	o->paragraph("This section presents a number of examples of how to invoke wkhtmltoimage.");
-	o->paragraph("To convert a remote HTML file to PNG:");
-	o->verbatim("wkhtmltoimage https://www.google.com google.png\n");
-	o->paragraph("To convert a local HTML file to PNG:");
-	o->verbatim("wkhtmltoimage my.html my.png\n");
-	o->paragraph("To crop around the first element matching a CSS selector:");
-	o->verbatim("wkhtmltoimage --selector '#logo' https://example.com page-logo.png\n");
-	o->paragraph("Crop coordinates are relative to the selected element; negative offsets add margins:");
-	o->verbatim("wkhtmltoimage --selector '#logo' --crop-x -10 --crop-y -10 page.html logo-with-margin.png\n");
+	o->paragraph("Convert a web page or local file to PNG:");
+	o->verbatim("wkhtmltoimage https://example.com page.png\n"
+				"wkhtmltoimage page.html page.png\n");
+	o->paragraph("Choose size and format:");
+	o->verbatim("wkhtmltoimage --width 1280 --height 720 --format jpg page.html page.jpg\n");
+	o->paragraph("Crop around the first element matching a CSS selector:");
+	o->verbatim("wkhtmltoimage --selector '#logo' https://example.com logo.png\n");
+	o->paragraph("Install completion for your active shell only:");
+	o->verbatim("wkhtmltoimage --install-completion\n");
 	o->endSection();
 }

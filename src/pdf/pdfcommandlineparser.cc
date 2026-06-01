@@ -70,6 +70,7 @@ void PdfCommandLineParser::usage(FILE * fd, bool extended) const {
 	outputName(o);
 	outputSynopsis(o);
  	outputDescripton(o);
+	outputExamples(o);
 	outputSwitches(o, extended, false);
 #ifndef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 	outputNotPatched(o, true);

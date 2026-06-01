@@ -40,49 +40,17 @@ void PdfCommandLineParser::outputManName(Outputter * o) const {
   \param o The outputter to output to
 */
 void PdfCommandLineParser::outputSynopsis(Outputter * o) const {
-	o->beginSection("Synopsis");
-	o->verbatim("wkhtmltopdf [GLOBAL OPTION]... [OBJECT]... <output file>\n");
+	o->beginSection("Usage");
+	o->verbatim("wkhtmltopdf [GLOBAL OPTION]... <input url/file> <output.pdf>\n"
+				"wkhtmltopdf [GLOBAL OPTION]... [OBJECT]... <output.pdf>\n");
 	o->endSection();
 
-	o->beginSection("Document objects");
-	o->beginParagraph();
-	o->text("wkhtmltopdf is able to put several objects into the output file, an object is either "
-			"a single webpage, a cover webpage or a table of contents.  The objects are put into "
-			"the output document in the order they are specified on the command line, options can "
-			"be specified on a per object basis or in the global options area. Options from the ");
-	o->sectionLink("Global Options");
-	o->text(" section can only be placed in the global options area.");
-	o->endParagraph();
-
-	o->paragraph("A page objects puts the content of a single webpage into the output document.");
-	o->verbatim("(page)? <input url/file name> [PAGE OPTION]...");
-	o->beginParagraph();
-	o->text("Options for the page object can be placed in the global options and the page "
-			"options areas. The applicable options can be found in the ");
-	o->sectionLink("Page Options");
-	o->text(" and ");
-	o->sectionLink("Headers And Footer Options");
-	o->text(" sections.");
-	o->endParagraph();
-
-	o->paragraph("A cover objects puts the content of a single webpage into the output document, "
-				 "the page does not appear in the table of contents, and does not have headers and footers.");
-	o->verbatim("cover <input url/file name> [PAGE OPTION]...");
-	o->paragraph("All options that can be specified for a page object can also be specified for a cover.");
-
-	o->paragraph("A table of contents object inserts a table of contents into the output document.");
-	o->verbatim("toc [TOC OPTION]...");
-	o->beginParagraph();
-	o->text("All options that can be specified for a page object can also be specified for a toc; "
-			"furthermore, the options from the ");
-	o->sectionLink("TOC Options");
-	o->text(" section can also be applied. The table of contents is generated via XSLT which means "
-			"that it can be styled to look however you want it to look. To get an idea of how to "
-			"do this you can dump the default xslt document by supplying the --dump-default-toc-xsl, and the outline it works on by supplying --dump-outline, see the ");
-	o->sectionLink("Outline Options");
-	o->text(" section.");
-	o->endParagraph();
-
+	o->beginSection("Objects");
+	o->paragraph("Objects are written to the output PDF in command-line order. A bare input is the same as a page object.");
+	o->verbatim("page <input url/file> [PAGE OPTION]...\n"
+				"cover <input url/file> [PAGE OPTION]...\n"
+				"toc [TOC OPTION]...\n");
+	o->paragraph("Global options must appear before the first object. Page, header, footer and TOC options may be placed after the object they affect.");
 	o->endSection();
 }
 
@@ -94,7 +62,7 @@ void PdfCommandLineParser::outputSynopsis(Outputter * o) const {
 void PdfCommandLineParser::outputDescripton(Outputter * o) const {
 	o->beginSection("Description");
 	o->beginParagraph();
-	o->text("Converts one or more HTML pages into a PDF document, ");
+	o->text("Convert HTML from a URL, local file or stdin into a PDF document, ");
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 	o->text("using wkhtmltopdf patched Qt.");
 #else
@@ -371,15 +339,17 @@ void PdfCommandLineParser::outputPageSizes(Outputter * o) const {
 */
 void PdfCommandLineParser::outputExamples(Outputter * o) const {
 	o->beginSection("Examples");
-	o->paragraph("This section presents a number of examples of how to invoke wkhtmltopdf.");
-	o->paragraph("To convert a remote HTML file to PDF:");
-	o->verbatim("wkhtmltopdf https://www.google.com google.pdf\n");
-	o->paragraph("To convert a local HTML file to PDF:");
-	o->verbatim("wkhtmltopdf my.html my.pdf\n");
-	o->paragraph("Produce the eler2.pdf sample file:");
-	o->verbatim("wkhtmltopdf -H  https://geekz.co.uk/lovesraymond/archive/eler-highlights-2008 eler2.pdf\n");
-	o->paragraph("Printing a book with a table of contents:");
-	o->verbatim("wkhtmltopdf -H cover cover.html toc chapter1.html chapter2.html chapter3.html book.pdf\n");
+	o->paragraph("Convert a web page or local file:");
+	o->verbatim("wkhtmltopdf https://example.com page.pdf\n"
+				"wkhtmltopdf report.html report.pdf\n");
+	o->paragraph("Read HTML from stdin and write PDF to stdout:");
+	o->verbatim("cat report.html | wkhtmltopdf - - > report.pdf\n");
+	o->paragraph("Set common PDF options:");
+	o->verbatim("wkhtmltopdf --page-size Letter --orientation Landscape --margin-top 10mm page.html page.pdf\n");
+	o->paragraph("Add a cover page, table of contents and chapters:");
+	o->verbatim("wkhtmltopdf cover cover.html toc chapter1.html chapter2.html book.pdf\n");
+	o->paragraph("Install completion for your active shell only:");
+	o->verbatim("wkhtmltopdf --install-completion\n");
 	o->endSection();
 }
 
