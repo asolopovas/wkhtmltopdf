@@ -49,7 +49,6 @@ PACKAGING_DIR ?= ../packaging
 RELEASE_VERSION ?= $(shell tr -d '[:space:]' < VERSION | sed 's/-.*//')
 RELEASE_ITERATION ?= 1
 RELEASE_OUTPUT ?= releases/$(RELEASE_VERSION)
-RELEASE_LINUX_TARGET ?= noble-amd64
 RELEASE_WINDOWS_TARGET ?= msvc2015-win64
 ifeq ($(OS),Windows_NT)
 RELEASE_BUILD_TARGETS ?= release-build-windows-exe
@@ -204,14 +203,13 @@ ensure-packaging:
 		git clone --depth 1 "$(PACKAGING_REPO)" "$(PACKAGING_DIR)"; \
 	fi
 
-release-build-linux-deb: ensure-packaging
-	$(PYTHON) scripts/patch-packaging-noble.py "$(PACKAGING_DIR)"
-	@rm -rf "$(RELEASE_OUTPUT)/linux-deb"
-	@mkdir -p "$(RELEASE_OUTPUT)/linux-deb"
-	@rm -f "$(PACKAGING_DIR)"/targets/wkhtmltox*.deb
-	cd "$(PACKAGING_DIR)" && $(PYTHON) ./build package-docker --clean --iteration "$(RELEASE_ITERATION)" "$(RELEASE_LINUX_TARGET)" "$(abspath .)"
-	cp "$(PACKAGING_DIR)"/targets/wkhtmltox*.deb "$(RELEASE_OUTPUT)/linux-deb/"
-	@(cd "$(RELEASE_OUTPUT)" && find linux-deb -maxdepth 1 -type f -print | sort | xargs sha256sum > checksums-linux-deb.txt)
+release-build-linux-deb:
+	RELEASE_VERSION="$(RELEASE_VERSION)" \
+	RELEASE_ITERATION="$(RELEASE_ITERATION)" \
+	RELEASE_OUTPUT="$(RELEASE_OUTPUT)" \
+	RELEASE_SERIES=linux \
+	MAKE_JOBS="$(JOBS)" \
+	scripts/build-linux-deb.sh
 
 release-build-windows-exe: ensure-packaging
 	@rm -rf "$(RELEASE_OUTPUT)/windows-exe"
@@ -226,8 +224,8 @@ release-test-linux-deb:
 	[ -n "$$package" ] || { echo "release-test: no deb package in $(RELEASE_OUTPUT)/linux-deb" >&2; exit 1; }; \
 	sudo apt-get update; \
 	sudo apt-get install -y "$$package"; \
-	WKHTMLTOPDF_BINARY=/usr/local/bin/wkhtmltopdf \
-	WKHTMLTOIMAGE_BINARY=/usr/local/bin/wkhtmltoimage \
+	WKHTMLTOPDF_BINARY=/usr/bin/wkhtmltopdf \
+	WKHTMLTOIMAGE_BINARY=/usr/bin/wkhtmltoimage \
 	$(PYTHON) tests/smoke/smoke.py
 
 release-test-windows-exe:
