@@ -5,13 +5,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         binutils \
-        build-essential \
-        ca-certificates \
-        dpkg-dev \
         file \
         fontconfig \
         fonts-dejavu-core \
+        g++ \
+        gcc \
         gzip \
+        libc6-dev \
         libfontconfig1-dev \
         libfreetype6-dev \
         libjpeg-dev \
@@ -20,8 +20,8 @@ RUN apt-get update \
         libx11-dev \
         libxext-dev \
         libxrender-dev \
+        make \
         patchelf \
-        python3 \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 

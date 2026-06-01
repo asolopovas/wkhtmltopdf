@@ -131,7 +131,12 @@ fi
 
 git diff --quiet || err "tracked files changed; commit or stash before release"
 git diff --cached --quiet || err "staged changes exist; commit or stash before release"
-! git rev-parse -q --verify "refs/tags/${release_version}" >/dev/null || err "tag exists: ${release_version}"
+
+tag_exists=false
+if git rev-parse -q --verify "refs/tags/${release_version}" >/dev/null; then
+    tag_exists=true
+    [[ "${release_version}" == "${base}" ]] || err "tag exists: ${release_version}"
+fi
 
 printf '%s\n' "${release_version}" > VERSION
 
@@ -139,24 +144,27 @@ if [[ "${build}" == true ]]; then
     make release-build RELEASE_VERSION="${release_version}" RELEASE_OUTPUT="${output_dir}"
 fi
 
-changed_files="$(git diff --name-only)"
-if [[ "${changed_files}" != "VERSION" ]]; then
+mapfile -t changed_files < <(git diff --name-only)
+if (( ${#changed_files[@]} > 1 )) || { (( ${#changed_files[@]} == 1 )) && [[ "${changed_files[0]}" != VERSION ]]; }; then
     echo "release: unexpected tracked changes after build:" >&2
     git diff --name-only >&2
     exit 1
 fi
 
-git add VERSION
-git commit -m "Release ${release_version}"
-git tag "${release_version}"
-if git rev-parse -q --verify refs/tags/latest >/dev/null; then
-    git tag -d latest >/dev/null
+if [[ "${tag_exists}" == false ]]; then
+    if [[ "${#changed_files[@]}" -eq 1 ]]; then
+        git add VERSION
+        git commit -m "Release ${release_version}"
+    fi
+    git tag "${release_version}"
 fi
-git tag latest
+git tag -f latest
 
 if [[ "${push}" == true ]]; then
-    git push origin HEAD
-    git push origin "${release_version}"
+    if [[ "${tag_exists}" == false ]]; then
+        git push origin HEAD
+        git push origin "${release_version}"
+    fi
     git push origin latest --force
 fi
 

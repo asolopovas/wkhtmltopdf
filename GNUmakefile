@@ -17,6 +17,8 @@ DOCKER ?= docker
 DOCKERFILE ?= Dockerfile.build
 DOCKER_IMAGE ?= asolopovas/wkhtmltox-linux-deb-build:20.04
 DOCKER_BUILD_ARGS ?=
+DOCKER_REBUILD ?= 0
+DOCKER_PUSH ?= 1
 PATCHED_QT_DIR ?= $(abspath tmp/builds/focal-amd64)
 DOCKER_QMAKE ?= /tgt/qt/bin/qmake
 
@@ -45,10 +47,11 @@ all: build
 build shadow-build: release-build-linux-deb
 
 docker-image:
-	$(DOCKER) pull "$(DOCKER_IMAGE)" || { \
-		$(DOCKER) build -f "$(DOCKERFILE)" -t "$(DOCKER_IMAGE)" $(DOCKER_BUILD_ARGS) . && \
-		$(DOCKER) push "$(DOCKER_IMAGE)"; \
-	}
+	@if [ "$(DOCKER_REBUILD)" != "1" ] && $(DOCKER) pull "$(DOCKER_IMAGE)"; then \
+		exit 0; \
+	fi; \
+	$(DOCKER) build -f "$(DOCKERFILE)" -t "$(DOCKER_IMAGE)" $(DOCKER_BUILD_ARGS) .; \
+	if [ "$(DOCKER_PUSH)" = "1" ]; then $(DOCKER) push "$(DOCKER_IMAGE)"; fi
 
 release-build-linux-deb:
 	@if [ ! -x "$(PATCHED_QT_DIR)/qt/bin/qmake" ]; then \
@@ -156,3 +159,4 @@ help:
 	@echo "  make release-build         Build Linux .deb and Windows installer"
 	@echo ""
 	@echo "Docker build input: PATCHED_QT_DIR=$(PATCHED_QT_DIR)"
+	@echo "Docker image knobs: DOCKER_IMAGE=$(DOCKER_IMAGE), DOCKER_REBUILD=$(DOCKER_REBUILD), DOCKER_PUSH=$(DOCKER_PUSH)"
