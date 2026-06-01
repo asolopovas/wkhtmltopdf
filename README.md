@@ -13,6 +13,26 @@ wkhtmltoimage https://example.com page.png
 wkhtmltoimage --width 1280 --format jpg page.html page.jpg
 ```
 
+AVIF images are handled through Qt image plugins. Install a Qt AVIF plugin
+(for example `qt5-avif-image-plugin` on Ubuntu/Debian) and keep it on Qt's
+plugin path; wkhtmltopdf automatically allows the `avif` image format for
+QtWebKit when the plugin is present and no custom image-format whitelist is set.
+
+For controlled templates, keep the fast Qt WebKit path by writing CSS with
+fallbacks before modern layout rules:
+
+```css
+.cards { display: table; width: 100%; }      /* wkhtmltopdf fallback */
+.card { display: table-cell; width: 33.33%; }
+@supports (display: grid) {
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .card { display: block; width: auto; }
+}
+```
+
+Use a Chromium/Puppeteer-style backend only for inputs that truly require
+uncontrolled modern browser behavior or JavaScript-heavy rendering.
+
 Common PDF options:
 
 ```sh

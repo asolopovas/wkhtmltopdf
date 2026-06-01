@@ -31,7 +31,13 @@
 #include <locale.h>
 #endif
 
+static void allowAvifQtImagePlugin() {
+	if (qgetenv("QTWEBKIT_IMAGEFORMAT_WHITELIST").isEmpty())
+		qputenv("QTWEBKIT_IMAGEFORMAT_WHITELIST", "avif");
+}
+
 int main(int argc, char** argv) {
+	allowAvifQtImagePlugin();
 #if defined(Q_OS_UNIX)
 	setlocale(LC_ALL, "");
 #if QT_VERSION >= 0x050000 && !defined(__EXTENSIVE_WKHTMLTOPDF_QT_HACK__)
