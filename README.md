@@ -41,12 +41,13 @@ Package scripts can use `--completion <bash|zsh|fish>`.
 
 ## Build
 
-Official packages are built from <https://github.com/wkhtmltopdf/packaging>.
+Linux release packages in this fork use system Qt 5 so Qt image plugins such as AVIF can be bundled.
+The legacy patched-Qt packaging flow remains available for features that require wkhtmltopdf's Qt patches, but patched Qt 4 cannot use Qt 5 image plugins.
 
 ```sh
 make deps      # once, if dependencies are missing
-make           # configure + parallel build
-make test      # smoke test
+make           # configure + parallel system-Qt development build
+make test      # smoke test the development build
 ```
 
 Install and clean:
@@ -59,7 +60,7 @@ make clean
 make distclean
 ```
 
-Useful knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`.
+Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`.
 
 Release helpers:
 

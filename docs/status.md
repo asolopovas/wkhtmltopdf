@@ -8,10 +8,10 @@ wkhtmltopdf 0.12.x is useful but legacy. It depends on Qt WebKit.
 
 ## Facts
 
-- Official builds use patched Qt 4.8; Qt 4 has been unsupported since 2015.
+- Legacy official builds use patched Qt 4.8; Qt 4 has been unsupported since 2015.
 - Qt 5 removed QtWebKit in 2016; community forks lag current WebKit.
-- Distribution builds may miss wkhtmltopdf Qt patches.
-- AVIF works only when a Qt image plugin, such as `qt5-avif-image-plugin`, is installed and allowed by `QTWEBKIT_IMAGEFORMAT_WHITELIST`.
+- System-Qt builds may miss wkhtmltopdf Qt patches, but they can use distro image plugins such as AVIF.
+- AVIF works only when a Qt image plugin, such as `qt5-avif-image-plugin`, is installed/bundled and allowed by `QTWEBKIT_IMAGEFORMAT_WHITELIST`.
 - CSS grid, modern browser APIs, and JavaScript-heavy pages are better served by Chromium/Puppeteer.
 
 ## Security

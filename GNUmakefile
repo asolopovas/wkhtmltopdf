@@ -217,7 +217,7 @@ release-test-windows-exe:
 
 help:
 	@echo "Common commands:"
-	@echo "  make                       Build (use JOBS=8 or QT=4 when needed)"
+	@echo "  make                       Build system-Qt development binaries (use JOBS=8 or QT=4 when needed)"
 	@echo "  make test                  Build and run smoke tests"
 	@echo "  make install               Install to PREFIX=$(PREFIX); stages if /usr/local is not writable"
 	@echo "  make install PREFIX=/path  Install to a writable prefix"

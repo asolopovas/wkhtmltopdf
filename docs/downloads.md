@@ -12,7 +12,7 @@ Release assets live in [wkhtmltopdf/packaging releases](https://github.com/wkhtm
 2. If no exact patch release exists, try the same major/LTS release.
 3. If nothing fits, ask in [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
 
-Official packages use patched Qt. Distribution packages may use unpatched Qt and differ. Generic Linux binaries are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
+Legacy official packages use patched Qt. This fork's AVIF-capable Linux packages use system Qt 5 with bundled Qt image plugins, so they may differ from patched-Qt builds. Generic Linux binaries are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
 
 ## Archive
 

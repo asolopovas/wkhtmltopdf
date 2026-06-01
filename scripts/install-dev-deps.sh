@@ -84,6 +84,7 @@ packages=(
 	ca-certificates
 	python3
 )
+optional_packages=()
 
 case "$qt_version" in
 5)
@@ -93,6 +94,9 @@ case "$qt_version" in
 		libqt5xmlpatterns5-dev
 		qt5-qmake
 		qtbase5-dev
+	)
+	optional_packages+=(
+		qt5-avif-image-plugin
 	)
 	;;
 4)
@@ -107,6 +111,9 @@ if ((dry_run)); then
 	print_command "${apt_runner[@]}" update
 	print_command "${apt_install_runner[@]}" install -y --no-remove --fix-broken
 	print_command "${apt_install_runner[@]}" install -y --no-install-recommends "${packages[@]}"
+	if ((${#optional_packages[@]})); then
+		print_command "${apt_install_runner[@]}" install -y --no-install-recommends "${optional_packages[@]}"
+	fi
 	exit 0
 fi
 
@@ -117,3 +124,8 @@ fi
 # --no-remove prevents apt from silently removing local packages to proceed.
 "${apt_install_runner[@]}" install -y --no-remove --fix-broken
 "${apt_install_runner[@]}" install -y --no-install-recommends "${packages[@]}"
+if ((${#optional_packages[@]})); then
+	if ! "${apt_install_runner[@]}" install -y --no-install-recommends "${optional_packages[@]}"; then
+		echo "WARNING: optional Qt AVIF plugin package is unavailable; AVIF images will not render unless an equivalent Qt image plugin is installed." >&2
+	fi
+fi

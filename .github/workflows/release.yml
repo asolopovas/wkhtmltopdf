@@ -24,7 +24,7 @@ env:
 
 jobs:
   linux-deb:
-    name: Build portable Linux deb
+    name: Build AVIF-capable Linux deb
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -32,9 +32,9 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
-      - name: build deb package in Debian 11 container
+      - name: build deb package in Ubuntu 24.04 container with AVIF plugin
         run: |
-          docker run --rm -v "$PWD:/src" -w /src debian:bullseye-slim bash -lc '
+          docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 bash -lc '
             set -euo pipefail
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -47,10 +47,11 @@ jobs:
               libqt5svg5-dev \
               libqt5webkit5-dev \
               libqt5xmlpatterns5-dev \
+              qt5-avif-image-plugin \
               qt5-qmake \
               qtbase5-dev \
               qttools5-dev-tools
-            RELEASE_OUTPUT=artifacts MAKE_JOBS=$(nproc) scripts/build-linux-deb.sh
+            RELEASE_OUTPUT=artifacts RELEASE_SERIES=noble MAKE_JOBS=$(nproc) scripts/build-linux-deb.sh
             chown -R --reference=/src artifacts
           '
       - name: install and smoke-test deb package

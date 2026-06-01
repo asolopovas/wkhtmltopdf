@@ -33,6 +33,7 @@ package_arch="${DEB_ARCH:-$(dpkg --print-architecture)}"
 multiarch="${DEB_HOST_MULTIARCH:-$(dpkg-architecture -qDEB_HOST_MULTIARCH)}"
 package_name="wkhtmltox_${release_version}-${release_iteration}.${package_series}_${package_arch}"
 install_base="/opt/wkhtmltox"
+libc_version="$(dpkg-query -W -f='${Version}' libc6 | sed 's/-.*//')"
 
 case "${release_version}" in
     *[!0-9A-Za-z.+:~_-]*|'')
@@ -107,9 +108,8 @@ for crypto_lib in /usr/lib/${multiarch}/libssl.so.* /usr/lib/${multiarch}/libcry
 done
 
 # Bundle dynamically linked runtime libraries from the build distribution, but
-# leave glibc/the dynamic loader to the host for broad Debian/Ubuntu/Mint amd64
-# compatibility. Build this package on an old-enough base (Debian 11) so the
-# required glibc floor remains low.
+# leave glibc/the dynamic loader to the host for Debian/Ubuntu/Mint amd64
+# compatibility. The package metadata records the build base's libc floor.
 skip_regex='/(ld-linux-x86-64|libBrokenLocale|libSegFault|libanl|libc|libdl|libm|libmemusage|libmvec|libnsl|libnss_.*|libpthread|libresolv|librt|libthread_db|libutil)\.so(\.|$)'
 copy_runtime_deps() {
     local copied_any=true
@@ -165,7 +165,7 @@ Section: utils
 Priority: optional
 Architecture: ${package_arch}
 Maintainer: wkhtmltopdf maintainers <support@wkhtmltopdf.org>
-Depends: libc6 (>= 2.31)
+Depends: libc6 (>= ${libc_version})
 Conflicts: wkhtmltopdf
 Replaces: wkhtmltopdf
 Provides: wkhtmltopdf
