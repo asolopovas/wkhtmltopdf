@@ -4,7 +4,7 @@ layout: default
 
 # AppArmor
 
-AppArmor can limit damage when wkhtmltopdf handles risky HTML. It is a backstop, not permission to trust input. Prefer trusted input; otherwise combine sanitization, process isolation, and filesystem/network limits. SELinux is the usual Red Hat/Fedora equivalent.
+Use AppArmor to reduce damage when wkhtmltopdf handles risky HTML. It is a backstop; still sanitize input and isolate filesystem, network, credentials, caches, and logs. SELinux is the Red Hat/Fedora equivalent.
 
 ## Enable
 
@@ -13,9 +13,9 @@ systemctl status apparmor
 sudo systemctl enable --now apparmor
 ```
 
-Install `apparmor` and `apparmor-utils` if `aa-status` or the unit is missing.
+Install `apparmor` and `apparmor-utils` if needed.
 
-## Profile
+## Minimal profile
 
 1. Save as `/etc/apparmor.d/usr.local.bin.wkhtmltopdf`.
 2. Replace paths with the minimum your app needs.
@@ -29,19 +29,16 @@ Install `apparmor` and `apparmor-utils` if `aa-status` or the unit is missing.
   #include <abstractions/base>
   #include <abstractions/fonts>
   #include <abstractions/openssl>
-  # Remove if network/DNS is unnecessary.
-  #include <abstractions/nameservice>
+  #include <abstractions/nameservice> # remove if network/DNS is unnecessary
 
   deny capability sys_ptrace,
 
   /proc/*/maps r,
   /usr/local/bin/wkhtmltopdf mr,
   /var/cache/fontconfig/* r,
-  # Set TMPDIR here.
   /var/tmp/wkhtmltopdf/** rwlk,
 
   /opt/example_worktree/** rwk,
-  /opt/other_workspace/single_dir/* rwk,
 }
 ```
 

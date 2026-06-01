@@ -1,31 +1,32 @@
 # Agent map
 
-Use the repo as source of truth. Keep this file as a map; put durable knowledge in docs, tests, scripts, schemas, generated artifacts, or execution plans.
+The repository is the source of truth. Keep durable knowledge in code, tests, scripts, generated docs, or checked-in execution plans; keep this file short.
 
 ## Sources
 
-- User docs: `docs/docs.md`, `docs/downloads.md`, `docs/status.md`, `docs/support.md`.
+- User docs: `README.md`, `docs/docs.md`, `docs/downloads.md`, `docs/status.md`, `docs/support.md`.
 - Maintainer docs: `docs/source-guide.md`, `docs/settings.md`, `docs/apparmor.md`.
-- Generated outputs: `docs/usage/wkhtmltopdf.txt`, `docs/libwkhtmltox/`.
-- Build/package truth: <https://github.com/wkhtmltopdf/packaging>.
-- CI truth: `.github/workflows/official.yml`, `.github/workflows/unpatched.yml`.
+- Generated docs: `docs/usage/wkhtmltopdf.txt`, `docs/libwkhtmltox/`.
+- Execution plans: `docs/execution-plans/`.
+- Build/package truth: `GNUmakefile`, `.github/workflows/`, <https://github.com/wkhtmltopdf/packaging>.
 
 ## Task loop
 
-1. Inspect code, docs, and existing generated output.
-2. Use a brief plan; for risky or multi-step work, check in an execution plan with goal, scope, acceptance criteria, progress, decisions, validation, and debt.
-3. Work in an isolated git worktree with disposable env vars, ports, temp dirs, logs, caches, and services.
-4. Make the smallest change that meets acceptance criteria.
-5. Run the closest local check; capture commands, results, and unavailable checks.
+1. Inspect repo sources and generated output.
+2. Plan briefly; for risky or multi-step work, add/update an execution plan with goal, scope, acceptance criteria, progress, decisions, validation, and debt.
+3. Work in an isolated git worktree when practical; isolate env vars, temp dirs, caches, logs, ports, and services.
+4. Make the smallest change that satisfies acceptance criteria.
+5. Run the closest local checks and record commands/results.
 6. Self-review for correctness, security, stale docs, generated-output freshness, and broken links.
+7. Escalate only for judgment, risk, ambiguity, or unavailable validation.
 
-## Validation
+## Checks
 
-- Qt 4 unpatched: `qmake-qt4 CONFIG+=silent && make`
-- Qt 5 unpatched: `qmake CONFIG+=silent && make`
-- Official packages: mirror `.github/workflows/official.yml` in the packaging repo.
-- Docs: verify links, issue routing, and generated artifacts.
+- Build/test: `make`, `make test`.
+- Qt 4 unpatched: `make QT=4` when dependencies are available.
+- Install/package: `make install PREFIX=/path`, `make release DRY_RUN=1`, packaging repo workflows for official packages.
+- Docs: verify links and regenerate affected generated artifacts.
 
 ## Pull requests
 
-Keep PRs small. Include summary, acceptance criteria, validation results, runtime evidence when relevant, and follow-up debt. Escalate only for product judgment, risk, ambiguity, or unavailable validation.
+Keep PRs small. Include summary, acceptance criteria, validation commands/results, runtime evidence when relevant, and follow-up debt.

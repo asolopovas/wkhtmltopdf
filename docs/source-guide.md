@@ -5,87 +5,61 @@ title: Source guide
 
 # Source guide
 
-Maintainer map for source areas not obvious from generated CLI or C API docs.
+Maintainer map. Generated CLI/C API docs remain the closest reference for runtime behavior.
 
-## Directories
+## Code map
 
-- `src/shared/` — shared CLI parsing, option handlers, help output, progress, console feedback.
-- `src/lib/` — conversion library: settings, loading, rendering, output, logging, temp files, C API support.
-- `src/pdf/` — `wkhtmltopdf`: PDF options, document objects, outlines, headers, footers, table of contents.
-- `src/image/` — `wkhtmltoimage`: image options, viewport, crop, transparency, formats.
-- `src/lib/pdf.h`, `src/lib/image.h` — public C API headers installed under `wkhtmltox/`.
-- `docs/usage/`, `docs/libwkhtmltox/` — generated CLI and C API docs.
-- Packaging — maintained in [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
+- `src/shared/` — CLI parsing, option handlers, help output, progress, console feedback.
+- `src/lib/` — settings, loading, rendering, output, logging, temp files, C API.
+- `src/pdf/` — `wkhtmltopdf`: PDF arguments, objects, outlines, headers/footers, TOC.
+- `src/image/` — `wkhtmltoimage`: image arguments, viewport, crop, transparency, formats.
+- `src/lib/pdf.h`, `src/lib/image.h` — public C API headers.
+- `docs/usage/`, `docs/libwkhtmltox/` — generated references.
+- Packaging — [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
 
-## Build
+## Workflow
 
-The convenience wrapper keeps day-to-day commands short and uses all available CPU threads by default:
+Use the wrapper unless reproducing raw qmake behavior:
 
 ```sh
-make deps      # once, when dependencies are missing
+make deps      # once, if dependencies are missing
 make           # configure + parallel build
 make test      # smoke test
-```
-
-Common knobs are standard and memorable:
-
-```sh
-make JOBS=8
-make QT=4
 make install PREFIX="$HOME/.local"
-make install DESTDIR="$PWD/package" PREFIX=/usr
-make clean
-make distclean
+make clean     # keep configuration
+make distclean # remove build dir
 ```
 
-If `ccache` is installed, the wrapper uses it automatically; set `USE_CCACHE=0` to disable it. Manual qmake builds should still pass an explicit job count (`make -j"$(nproc)"`).
+Useful knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `DESTDIR=/tmp/package`, `PREFIX=/usr`.
 
-Release helpers follow the same style:
+Release preview:
 
 ```sh
 make release DRY_RUN=1
 make release VERSION=0.13.0 PUSH=0
 make release BUMP=patch
-make release BUILD=0 PUSH=0
 ```
 
 ## Conversion flow
 
-1. CLI parsers or C API calls fill settings structures.
-2. `src/lib/multipageloader.*` loads pages and resources using selected network, JavaScript, proxy, cookie, and local-file rules.
-3. Qt WebKit renders the `QWebPage`.
+1. CLI/C API populates settings.
+2. `MultipageLoader` loads pages/resources.
+3. Qt WebKit renders `QWebPage`.
 4. `PdfConverter` or `ImageConverter` writes output.
-5. The shared `Converter` base emits progress, warnings, errors, and success/failure to CLI output or C callbacks.
+5. `Converter` reports progress, warnings, errors, and completion.
 
-## PDF path
+## Hot paths
 
-`wkhtmltopdf` accepts page, cover, and table-of-contents objects. Main files:
+- PDF CLI: `src/pdf/pdfarguments.cc`, `src/pdf/pdfcommandlineparser.*`.
+- PDF settings/rendering: `src/lib/pdfsettings.*`, `src/lib/pdfconverter.*`.
+- Image CLI: `src/image/imagearguments.cc`, `src/image/imagecommandlineparser.*`.
+- Image settings/rendering: `src/lib/imagesettings.*`, `src/lib/imageconverter.*`.
+- Loading/security: `src/lib/loadsettings.*`, `src/lib/reflect.*`, `src/shared/commonarguments.cc`.
 
-- `src/pdf/pdfarguments.cc` — PDF CLI switches.
-- `src/pdf/pdfcommandlineparser.*` — object parsing and help output.
-- `src/lib/pdfsettings.*` — global and per-object settings.
-- `src/lib/pdfconverter.*` — rendering, assembly, outlines, links, headers, footers, output.
-- `src/lib/tocstylesheet.*`, `src/lib/doc.cc` — generated TOC stylesheet and doc fragments.
+Distribution builds may lack patched-Qt features: multiple inputs, headers/footers, outlines, TOC, smart-shrinking controls, and PDF links.
 
-Patched Qt features may be missing or different in distribution builds: multiple inputs, headers/footers, outlines, TOC, smart shrinking controls, and PDF links.
+## Change rules
 
-## Image path
-
-`wkhtmltoimage` renders one input to bitmap or SVG. Main files:
-
-- `src/image/imagearguments.cc` — image CLI switches.
-- `src/image/imagecommandlineparser.*` — parsing and help output.
-- `src/lib/imagesettings.*` — crop, format, quality, viewport, smart width.
-- `src/lib/imageconverter.*` — loading, viewport calculation, background, crop, paint, write.
-
-If `fmt` is omitted, output extension selects the format. Qt image writer support controls raster formats; SVG uses `QSvgGenerator`.
-
-## Loading and security
-
-Loading is shared and security-sensitive. Relevant files: `src/lib/loadsettings.*`, `src/lib/reflect.*`, `src/shared/commonarguments.cc`.
-
-Watch authentication, certificates, proxies, cookies, custom headers, JavaScript waits/scripts, local-file access, load-error handling, and print/screen media. If behavior changes risk, filesystem access, or network access, update [Project status](status.html) or [AppArmor](apparmor.html).
-
-## Settings and docs
-
-C API string keys are summarized in [Settings guide](settings.html) and generated in [C API docs](libwkhtmltox/). When CLI options, setting names, or defaults change, update source text, regenerate `docs/usage/` and `docs/libwkhtmltox/` when possible, then update human guides.
+- Loading changes are security-sensitive: review filesystem, network, credentials, cookies, custom headers, JavaScript, and error handling.
+- Setting changes: update parser/help text, regenerate CLI/C API docs when possible, then update `docs/settings.md` only for new groups or changed behavior.
+- Security-impacting behavior: update `docs/status.md` or `docs/apparmor.md`.

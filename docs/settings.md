@@ -5,7 +5,7 @@ title: Settings guide
 
 # Settings guide
 
-wkhtmltopdf has two public settings surfaces: generated CLI help and generated C API Doxygen. Both feed the same C++ settings structures.
+CLI options and C API keys feed the same C++ settings structures. Generated CLI help and Doxygen are the canonical references.
 
 ## Groups
 
@@ -17,7 +17,7 @@ wkhtmltopdf has two public settings surfaces: generated CLI help and generated C
 | Loading | `src/lib/loadsettings.*` | PDF objects and images | `load.jsdelay`, `load.customHeaders`, `load.proxy` |
 | Web rendering | `src/lib/websettings.*` | PDF objects and images | `web.background`, `web.enableJavascript`, `web.userStyleSheet` |
 
-CLI mapping lives in `src/pdf/pdfarguments.cc`, `src/image/imagearguments.cc`, and `src/shared/commonarguments.cc`.
+CLI mapping: `src/pdf/pdfarguments.cc`, `src/image/imagearguments.cc`, `src/shared/commonarguments.cc`.
 
 ## C API keys
 
@@ -31,19 +31,13 @@ header.left
 crop.width
 ```
 
-Lists accept indexed access such as `[0]`, plus helper names such as `first`, `last`, `size`, `clear`, and `remove`. Pair values, including custom headers and replacements, store name/value strings.
+Lists support indexes (`[0]`) and helpers (`first`, `last`, `size`, `clear`, `remove`). Pair values, such as headers and replacements, store name/value strings.
 
-Common value forms:
-
-- booleans: `true`, `false`
-- numbers: decimal strings
-- sizes: `10mm`, `1in`, `72pt`
-- load handling: `abort`, `skip`, `ignore`
-- proxy: `http://host:port`, `socks5://host:port`, optional credentials, or `None`
+Common value forms: booleans (`true`, `false`), numbers, sizes (`10mm`, `1in`, `72pt`), load handling (`abort`, `skip`, `ignore`), and proxies (`http://host:port`, `socks5://host:port`, optional credentials, or `None`).
 
 ## Security-sensitive loading
 
-Loading controls network requests, local files, scripts, cookies, and request metadata. Key options include:
+Loading controls network, local files, scripts, cookies, and request metadata. Review these options carefully:
 
 - local files: `load.blockLocalFileAccess`, `--disable-local-file-access`, `--enable-local-file-access`, `--allow`
 - JavaScript: `load.jsdelay`, `load.windowStatus`, `load.runScript`, `--javascript-delay`, `--window-status`, `--run-script`
@@ -53,14 +47,6 @@ Loading controls network requests, local files, scripts, cookies, and request me
 
 For risky input, isolate the process and allow-list access. See [Project status](status.html) and [AppArmor](apparmor.html).
 
-## PDF settings
+## Update rule
 
-PDF has global and per-object levels. Globals cover page size, orientation, margins, output, copies, outline, and image compression. Objects cover input pages, headers/footers, links, forms, TOC behavior, and loading. Header/footer replacements provide page and web-page values; custom replacements extend them. TOC output comes from the outline tree and XSLT (`--dump-default-toc-xsl`, `--xsl-style-sheet`).
-
-## Image settings
-
-Image output has one input and output. Important fields: viewport (`screenWidth`, `screenHeight`), `smartWidth`, crop rectangle, `fmt`, and `transparent` for PNG/SVG backgrounds.
-
-## Update checklist
-
-When a setting changes, update nearby source comments/parser text, regenerate affected CLI and C API docs, and update this guide only for new groups, shared behavior, or changed security expectations.
+When settings change, update parser/help text, regenerate affected CLI/C API docs when possible, and update this guide only for new groups, shared behavior, or changed security expectations.
