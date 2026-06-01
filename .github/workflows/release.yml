@@ -24,7 +24,7 @@ env:
 
 jobs:
   linux-deb:
-    name: Build Ubuntu 24.04 deb
+    name: Build portable Linux deb
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -32,28 +32,31 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
-      - name: install stable Qt 5 build packages
+      - name: build deb package in Debian 11 container
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            dpkg-dev \
-            gzip \
-            libqt5svg5-dev \
-            libqt5webkit5-dev \
-            libqt5xmlpatterns5-dev \
-            qt5-qmake \
-            qtbase5-dev \
-            qttools5-dev-tools \
-            xvfb \
-            xfonts-75dpi \
-            xfonts-base
-      - name: build deb package
-        run: scripts/build-linux-deb.sh
+          docker run --rm -v "$PWD:/src" -w /src debian:bullseye-slim bash -lc '
+            set -euo pipefail
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              build-essential \
+              ca-certificates \
+              dpkg-dev \
+              fonts-dejavu-core \
+              fontconfig \
+              gzip \
+              libqt5svg5-dev \
+              libqt5webkit5-dev \
+              libqt5xmlpatterns5-dev \
+              qt5-qmake \
+              qtbase5-dev \
+              qttools5-dev-tools
+            RELEASE_OUTPUT=artifacts MAKE_JOBS=$(nproc) scripts/build-linux-deb.sh
+            chown -R --reference=/src artifacts
+          '
       - name: install and smoke-test deb package
         run: |
-          sudo apt-get install -y ./artifacts/linux-deb/*.deb
-          xvfb-run -a python3 tests/smoke/smoke.py
+          sudo dpkg -i ./artifacts/linux-deb/*.deb
+          python3 tests/smoke/smoke.py
         env:
           RELEASE_OUTPUT: artifacts
           WKHTMLTOPDF_BINARY: /usr/bin/wkhtmltopdf
