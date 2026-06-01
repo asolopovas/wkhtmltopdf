@@ -1,4 +1,4 @@
 [submodule "qt"]
   path   = qt
-  url    = https://github.com/wkhtmltopdf/qt.git
-  branch = wk_4.8.7
+  url    = https://github.com/asolopovas/qt.git
+  branch = wk_4.8.7-0.13.0-ssl-fixes

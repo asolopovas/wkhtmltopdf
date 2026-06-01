@@ -27,6 +27,7 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - [x] Run closest local checks and record results.
 - [x] Fix CLI/man text output so patched builds print complete man-style help instead of truncated first-word paragraphs.
 - [x] Build replacement Linux `.deb` and Windows installer artifacts for 0.13.0.
+- [x] Fix Qt 4/OpenSSL 1.1 HTTPS rendering failure and JavaScript-triggered indeterminate upload aborts.
 
 ## Decisions
 - Do not hide reduced functionality by changing help text; reject unpatched Qt at build/test time instead.
@@ -62,6 +63,12 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 follow-up: rebuilt the `.deb`, installed it over the stale-local environment, and verified plain `wkhtmltopdf --version` and `wkhtmltoimage --version` both report `(with patched Qt)`.
 - 2026-06-01 follow-up: `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py` passed using default PATH resolution through `/usr/local/bin` symlinks.
 - 2026-06-01 follow-up: `tests/deb/deb-loader.sh artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb` passed for rebuilt artifact `90eec4104d125b069cfb594b3e075214150a1bba808940a989adc9689a625c5e`.
+- 2026-06-01 follow-up: patched Qt Network so OpenSSL 1.1 TLS 1.3 cipher names do not make `SSL_CTX_set_cipher_list()` fail all HTTPS requests; if Qt's generated cipher list is rejected, it falls back to OpenSSL `DEFAULT`.
+- 2026-06-01 follow-up: patched Qt Network to warn and use `Content-Length: 0` instead of `qFatal()` when page JavaScript creates an upload body with unknown size and no explicit content length.
+- 2026-06-01 follow-up: rebuilt Linux `.deb` from the updated patched Qt cache and installed it locally; `wkhtmltopdf https://3oak.co.uk /tmp/3oak-validation.pdf` exited 0 and produced a 5-page PDF.
+- 2026-06-01 follow-up: rebuilt the Windows MXE installer after Qt Network recompiled `qsslsocket_openssl.cpp` and `qhttpnetworkconnection.cpp`.
+- 2026-06-01 follow-up validation passed: `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh`; `git diff --check`; `python3 -m py_compile tests/smoke/smoke.py`; `shellcheck scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh`; `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py`.
+- 2026-06-01 follow-up rebuilt artifact checksums: Linux `.deb` `acf128204c1937580720ebedd3b02935606f6feb9e7d7622e175e44a4f687113`; Windows installer `bd5533fdc97297a1557734181ae950f25a628330d4679a96b67d005b6993a12b`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.
