@@ -22,15 +22,14 @@ Maintainer map. Generated CLI/C API docs remain the closest reference for runtim
 Use the wrapper unless reproducing raw qmake behavior. The default wrapper build uses system Qt; current Linux release packages in this fork also use system Qt 5 so AVIF-capable image plugins can be bundled.
 
 ```sh
-make deps      # once, if dependencies are missing
-make           # configure + parallel system-Qt development build
+make           # install/check deps, then configure + build
 make test      # smoke test the development build
 make install PREFIX="$HOME/.local"
 make clean     # keep configuration
 make distclean # remove build dir
 ```
 
-Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `DESTDIR=/tmp/package`, `PREFIX=/usr`.
+Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `AUTO_DEPS=0`, `DESTDIR=/tmp/package`, `PREFIX=/usr`.
 
 Release preview:
 

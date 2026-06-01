@@ -45,8 +45,7 @@ Linux release packages in this fork use system Qt 5 so Qt image plugins such as 
 The legacy patched-Qt packaging flow remains available for features that require wkhtmltopdf's Qt patches, but patched Qt 4 cannot use Qt 5 image plugins.
 
 ```sh
-make deps      # once, if dependencies are missing
-make           # configure + parallel system-Qt development build
+make           # install/check deps, then configure + build
 make test      # smoke test the development build
 ```
 
@@ -60,7 +59,7 @@ make clean
 make distclean
 ```
 
-Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`.
+Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `AUTO_DEPS=0`.
 
 Release helpers:
 

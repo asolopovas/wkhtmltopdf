@@ -39,6 +39,8 @@ PROJECT_FILE ?= $(abspath wkhtmltopdf.pro)
 DRY_RUN ?=
 PYTHON ?= python3
 SMOKE_TEST ?= tests/smoke/smoke.py
+AUTO_DEPS ?= 1
+DEPS_STAMP ?= $(BUILD_DIR)/.deps.qt$(QT).stamp
 WKHTMLTOPDF_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltopdf)
 WKHTMLTOIMAGE_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltoimage)
 # Release/package knobs.
@@ -66,7 +68,7 @@ UPLOAD ?= false
 
 
 .PHONY: all build configure test check smoke e2e
-.PHONY: install stage uninstall clean distclean deps install-dev help
+.PHONY: install stage uninstall clean distclean deps install-dev ensure-deps help
 .PHONY: release release-patch release-minor release-major
 .PHONY: release-build release-build-all release-test release-test-all
 .PHONY: release-build-linux-deb release-build-windows-exe
@@ -122,7 +124,21 @@ distclean:
 deps install-dev:
 	./scripts/install-dev-deps.sh --qt "$(QT)" $(if $(DRY_RUN),--dry-run,)
 
-configure:
+ensure-deps:
+	@if [ "$(AUTO_DEPS)" = "0" ] || [ "$(AUTO_DEPS)" = "false" ] || [ "$(AUTO_DEPS)" = "no" ]; then \
+		echo "ensure-deps: skipped because AUTO_DEPS=$(AUTO_DEPS)"; \
+		exit 0; \
+	fi; \
+	mkdir -p "$(BUILD_DIR)"; \
+	stamp="$(DEPS_STAMP)"; \
+	if [ ! -f "$$stamp" ] || [ "scripts/install-dev-deps.sh" -nt "$$stamp" ]; then \
+		./scripts/install-dev-deps.sh --qt "$(QT)" $(if $(DRY_RUN),--dry-run,) || exit $$?; \
+		if [ -z "$(DRY_RUN)" ]; then touch "$$stamp"; fi; \
+	else \
+		echo "ensure-deps: up to date"; \
+	fi
+
+configure: ensure-deps
 	@if [ -z "$(QMAKE)" ]; then \
 		echo "qmake not found. Run 'make install-dev' first, or set QMAKE=/path/to/qmake." >&2; \
 		exit 127; \
@@ -217,7 +233,7 @@ release-test-windows-exe:
 
 help:
 	@echo "Common commands:"
-	@echo "  make                       Build system-Qt development binaries (use JOBS=8 or QT=4 when needed)"
+	@echo "  make                       Install/check deps, then build system-Qt development binaries"
 	@echo "  make test                  Build and run smoke tests"
 	@echo "  make install               Install to PREFIX=$(PREFIX); stages if /usr/local is not writable"
 	@echo "  make install PREFIX=/path  Install to a writable prefix"
@@ -239,6 +255,7 @@ help:
 	@echo "Normal qmake targets are delegated to $(QMAKE_MAKEFILE) when it exists."
 	@echo "Standard install variables: PREFIX/prefix, DESTDIR. INSTALLBASE and INSTALL_ROOT still work for qmake compatibility."
 	@echo "Performance: JOBS controls parallelism; ccache is used automatically when available (set USE_CCACHE=0 to disable)."
+	@echo "Dependencies: make build/install runs make deps once by default (set AUTO_DEPS=0 to skip)."
 
 %:
 	+@if [ -f "$(BUILD_DIR)/$(QMAKE_MAKEFILE)" ]; then \
