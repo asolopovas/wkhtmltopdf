@@ -116,6 +116,34 @@ static QString completionDescription(const ArgHandler * handler) {
 	return desc;
 }
 
+static QString completionChoices(const QString & longName) {
+	if (longName == "completion")
+		return "bash zsh fish";
+	if (longName == "log-level")
+		return "none error warn info debug";
+	if (longName == "load-error-handling" || longName == "load-media-error-handling")
+		return "abort ignore skip";
+	if (longName == "orientation")
+		return "Portrait Landscape";
+	if (longName == "format")
+		return "jpg jpeg png bmp svg";
+	return QString();
+}
+
+static QString completionArgName(const ArgHandler * handler) {
+	if (!handler->argn.size())
+		return QString();
+	return handler->argn[0];
+}
+
+static QString zshCompletionSuffix(const ArgHandler * handler) {
+	QString choices = completionChoices(handler->longName);
+	if (!choices.isEmpty())
+		return ":" + completionArgName(handler) + ":(" + choices + ")";
+	QString argName = completionArgName(handler);
+	return argName.isEmpty() ? QString() : ":" + argName + ":_files";
+}
+
 static QString envValue(const char * name) {
 	const char * value = getenv(name);
 	return value ? QString::fromLocal8Bit(value) : QString();
@@ -201,17 +229,7 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 		for (int handlerIndex = 0; handlerIndex < handlers.size(); ++handlerIndex) {
 			const ArgHandler * handler = handlers.at(handlerIndex);
 			QString desc = completionDescription(handler);
-			QString suffix = handler->argn.size() ? ":" + handler->argn[0] + ":_files" : "";
-			if (handler->longName == "completion")
-				suffix = ":shell:(bash zsh fish)";
-			else if (handler->longName == "log-level")
-				suffix = ":level:(none error warn info debug)";
-			else if (handler->longName == "load-error-handling" || handler->longName == "load-media-error-handling")
-				suffix = ":handler:(abort ignore skip)";
-			else if (handler->longName == "orientation")
-				suffix = ":orientation:(Portrait Landscape)";
-			else if (handler->longName == "format")
-				suffix = ":format:(jpg jpeg png bmp svg)";
+			QString suffix = zshCompletionSuffix(handler);
 			QString longSpec = "--" + handler->longName + "[" + desc + "]" + suffix;
 			fprintf(fd, "    %s \\\n", shellQuote(longSpec).toLocal8Bit().constData());
 			if (handler->shortSwitch != 0) {
@@ -240,16 +258,9 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 			if (handler->argn.size())
 				line += " -r";
 			line += " -d " + shellQuote(completionDescription(handler));
-			if (handler->longName == "completion")
-				line += " -a 'bash zsh fish'";
-			else if (handler->longName == "log-level")
-				line += " -a 'none error warn info debug'";
-			else if (handler->longName == "load-error-handling" || handler->longName == "load-media-error-handling")
-				line += " -a 'abort ignore skip'";
-			else if (handler->longName == "orientation")
-				line += " -a 'Portrait Landscape'";
-			else if (handler->longName == "format")
-				line += " -a 'jpg jpeg png bmp svg'";
+			QString choices = completionChoices(handler->longName);
+			if (!choices.isEmpty())
+				line += " -a " + shellQuote(choices);
 			fprintf(fd, "%s\n", line.toLocal8Bit().constData());
 		}
 		return true;
