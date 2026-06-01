@@ -505,9 +505,10 @@ void ResourceObject::amfinished(QNetworkReply * reply) {
  */
 void ResourceObject::sslErrors(QNetworkReply *reply, const QList<QSslError> &) {
 	//We ignore any ssl error, as it is next to impossible to send or receive
-	//any private information with wkhtmltopdf anyhow, seeing as you cannot authenticate
+	//any private information with wkhtmltopdf anyhow, seeing as you cannot authenticate.
+	// Do not emit a generic warning for every affected subresource; actionable
+	// load failures are still reported through ResourceObject::amfinished().
 	reply->ignoreSslErrors();
-	warning("SSL error ignored");
 }
 
 static bool appendFileData(QFile &file, QByteArray &data) {
