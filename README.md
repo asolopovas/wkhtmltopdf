@@ -63,21 +63,37 @@ For package scripts or custom locations, generate a script with `--completion <b
 
 Official packages are built from <https://github.com/wkhtmltopdf/packaging>.
 
-Local unpatched build (uses all available CPU threads by default, equivalent to `-j$(nproc)`):
+Local unpatched build:
 
 ```sh
-make install-dev
-make build
-make test
+make deps      # once, when build dependencies are missing
+make           # configure + parallel build
+make test      # smoke test
 ```
 
-Manual qmake build:
+Install with standard Make variables:
 
 ```sh
-mkdir -p build
-cd build
-qmake ../wkhtmltopdf.pro CONFIG+=silent
-make -j"$(nproc)"
+make install PREFIX="$HOME/.local"
+sudo make install PREFIX=/usr/local
+make install DESTDIR="$PWD/package" PREFIX=/usr
+```
+
+Useful cleanup:
+
+```sh
+make clean      # remove objects, keep configuration
+make distclean  # remove the build directory
+```
+
+`make` uses all available CPU threads by default. Override with `JOBS=8`. If `ccache` is installed, the wrapper uses it automatically.
+
+Release helpers use the same small command surface:
+
+```sh
+make release DRY_RUN=1
+make release VERSION=0.13.0 PUSH=0
+make release BUMP=patch
 ```
 
 ## License

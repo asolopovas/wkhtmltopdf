@@ -19,20 +19,34 @@ Maintainer map for source areas not obvious from generated CLI or C API docs.
 
 ## Build
 
-Local builds should use all available CPU threads. The convenience target does this by default via `BUILD_JOBS=$(nproc)`:
+The convenience wrapper keeps day-to-day commands short and uses all available CPU threads by default:
 
 ```sh
-make install-dev
-make build
+make deps      # once, when dependencies are missing
+make           # configure + parallel build
+make test      # smoke test
 ```
 
-Manual qmake builds should also pass the available job count:
+Common knobs are standard and memorable:
 
 ```sh
-mkdir -p build
-cd build
-qmake ../wkhtmltopdf.pro CONFIG+=silent
-make -j"$(nproc)"
+make JOBS=8
+make QT=4
+make install PREFIX="$HOME/.local"
+make install DESTDIR="$PWD/package" PREFIX=/usr
+make clean
+make distclean
+```
+
+If `ccache` is installed, the wrapper uses it automatically; set `USE_CCACHE=0` to disable it. Manual qmake builds should still pass an explicit job count (`make -j"$(nproc)"`).
+
+Release helpers follow the same style:
+
+```sh
+make release DRY_RUN=1
+make release VERSION=0.13.0 PUSH=0
+make release BUMP=patch
+make release BUILD=0 PUSH=0
 ```
 
 ## Conversion flow

@@ -22,9 +22,10 @@ Options:
   -h, --help                        Show this help
 
 Examples:
-  make release VERSION_OVERRIDE=0.13.0
+  make release DRY_RUN=1
+  make release VERSION=0.13.0 PUSH=0
   make release BUMP=patch
-  make release RELEASE_ARGS='--bump minor --no-push'
+  make release BUMP=minor PUSH=0 UPLOAD=1
 EOF
 }
 
