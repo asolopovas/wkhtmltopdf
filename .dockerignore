@@ -1,0 +1,11 @@
+.git
+build
+build-*
+package
+releases
+tmp
+artifacts
+qt
+*.o
+*.so
+*.so.*

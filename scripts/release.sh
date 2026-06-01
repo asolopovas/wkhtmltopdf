@@ -17,7 +17,7 @@ Options:
   --output DIR                      Build artifacts into DIR (default: releases/X.Y.Z)
   --no-build                        Skip local package build
   --push / --no-push                Push commit and tags to origin (default: push)
-  --upload / --no-upload            Upload artifacts with gh release (default: no-upload)
+  --upload / --no-upload            Upload artifacts with gh release (default: upload)
   --dry-run                         Print the resolved plan only
   -h, --help                        Show this help
 
@@ -25,7 +25,7 @@ Examples:
   make release DRY_RUN=1
   make release VERSION=0.13.0 PUSH=0
   make release BUMP=patch
-  make release BUMP=minor PUSH=0 UPLOAD=1
+  make release BUMP=minor PUSH=0
 EOF
 }
 
@@ -66,7 +66,7 @@ version_override=""
 output_dir=""
 push=true
 build=true
-upload=false
+upload=true
 dry_run=false
 
 while [[ $# -gt 0 ]]; do
@@ -170,6 +170,14 @@ if [[ "${upload}" == true ]]; then
         gh release create "${release_version}" "${artifacts[@]}" \
             --target "$(git rev-parse HEAD)" \
             --title "wkhtmltox ${release_version}" \
+            --notes "wkhtmltox ${release_version}"
+    fi
+    if gh release view latest >/dev/null 2>&1; then
+        gh release upload latest "${artifacts[@]}" --clobber
+    else
+        gh release create latest "${artifacts[@]}" \
+            --target "$(git rev-parse HEAD)" \
+            --title "wkhtmltox latest (${release_version})" \
             --notes "wkhtmltox ${release_version}"
     fi
 fi

@@ -8,7 +8,7 @@ The repository is the source of truth. Keep durable knowledge in code, tests, sc
 - Maintainer docs: `docs/source-guide.md`, `docs/settings.md`, `docs/apparmor.md`.
 - Generated docs: `docs/usage/wkhtmltopdf.txt`, `docs/libwkhtmltox/`.
 - Execution plans: `docs/execution-plans/`.
-- Build/package truth: `GNUmakefile`, `.github/workflows/`, <https://github.com/wkhtmltopdf/packaging>.
+- Build/package truth: `GNUmakefile`, `scripts/build-linux-deb.sh`, `scripts/build-windows-msys2.sh`.
 
 ## Task loop
 
@@ -24,7 +24,7 @@ The repository is the source of truth. Keep durable knowledge in code, tests, sc
 
 - Build/test: `make`, `make test`.
 - Qt 4 unpatched: `make QT=4` when dependencies are available.
-- Install/package: `make install PREFIX=/path`, `make release DRY_RUN=1`, packaging repo workflows for official packages.
+- Install/package: `make install PREFIX=/path`, `make release DRY_RUN=1`, `make release-build`.
 - Docs: verify links and regenerate affected generated artifacts.
 
 ## Pull requests

@@ -15,29 +15,29 @@ Maintainer map. Generated CLI/C API docs remain the closest reference for runtim
 - `src/image/` — `wkhtmltoimage`: image arguments, viewport, crop, transparency, formats.
 - `src/lib/pdf.h`, `src/lib/image.h` — public C API headers.
 - `docs/usage/`, `docs/libwkhtmltox/` — generated references.
-- Packaging — [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
+- Packaging — local `make release-build` targets and package scripts under `scripts/`.
 
 ## Workflow
 
-Use the wrapper unless reproducing raw qmake behavior. Development builds may use system Qt for local checks, but release packages must use wkhtmltopdf patched Qt and must report `(with patched Qt)`.
+Use the wrapper unless reproducing raw qmake behavior. `make build` builds locally with the configured qmake. Release package scripts build one Linux `.deb` and one Windows installer, validate that artifacts report `(with patched Qt)`, and reject reduced-functionality packages.
 
 ```sh
-make           # install/check deps, then configure + build
-make test      # smoke test the development build
+make           # build the Linux .deb inside Docker
+make test      # build and run Linux package checks
 make install PREFIX="$HOME/.local"
 make install PREFIX=/usr/local # uses sudo when /usr/local is not writable
 make clean     # keep configuration
 make distclean # remove build dir
 ```
 
-Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `AUTO_DEPS=0`, `DESTDIR=/tmp/package`, `PREFIX=/usr`.
+Useful build knobs: `JOBS=8`, `PATCHED_QT_DIR=/path/to/patched-qt-build-root`, `DOCKER_IMAGE=registry/name:tag`, `DESTDIR=/tmp/package`, `PREFIX=/usr`.
 
 Release preview:
 
 ```sh
 make release DRY_RUN=1
 make release VERSION=0.13.0 PUSH=0
-make release BUMP=patch
+make release BUMP=patch  # build Linux .deb + Windows installer, then upload
 ```
 
 ## Conversion flow
@@ -56,7 +56,7 @@ make release BUMP=patch
 - Image settings/rendering: `src/lib/imagesettings.*`, `src/lib/imageconverter.*`.
 - Loading/security: `src/lib/loadsettings.*`, `src/lib/reflect.*`, `src/shared/commonarguments.cc`.
 
-System-Qt builds are useful only for local development diagnostics. They lack patched-Qt features such as multiple inputs, headers/footers, outlines, TOC, smart-shrinking controls, PDF links, and reliable headless rendering. Do not publish release artifacts unless package validation proves `(with patched Qt)` and no `Reduced Functionality` help text.
+Do not publish release artifacts unless package validation proves `(with patched Qt)` and no `Reduced Functionality` help text.
 
 ## Change rules
 

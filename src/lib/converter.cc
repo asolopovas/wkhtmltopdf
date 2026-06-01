@@ -24,10 +24,6 @@
 #include <QWebFrame>
 #include <qapplication.h>
 
-#ifndef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
-#error "wkhtmltox release builds require wkhtmltopdf patched Qt; unpatched Qt produces reduced functionality."
-#endif
-
 #ifdef QT4_STATICPLUGIN_TEXTCODECS
 #include <QtPlugin>
 Q_IMPORT_PLUGIN(qcncodecs)

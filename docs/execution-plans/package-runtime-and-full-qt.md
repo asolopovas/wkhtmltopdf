@@ -7,7 +7,7 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - Linux `.deb` build/test scripts.
 - Windows release build guard.
 - Smoke/package tests that reject reduced-functionality builds.
-- CI release/unpatched workflows so bad artifacts cannot be published.
+- Local release build/upload commands so bad artifacts cannot be published.
 
 ## Acceptance criteria
 - `VERSION` remains `0.13.0`, and Linux Debian packages use epoch `1:` so they upgrade the upstream `1:0.12.6.1-3.bookworm` package cleanly.
@@ -19,14 +19,14 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - The Linux `.deb` moves stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` out of the way and leaves `/usr/local/bin` resolving to the packaged wrappers.
 - A small Docker E2E harness proves the `.deb` installs with plain `dpkg -i` in fresh Ubuntu/Debian containers without building wkhtmltopdf or FrankenPHP.
 - Package tests cover direct `/opt` execution, `/usr/bin` wrapper execution, stale `/usr/local/lib/libwkhtmltox.so.0` shadowing, and smoke rendering.
-- Build and compilation output is tee'd into git-ignored `tmp/logs/` files for later review, and CI uploads those logs as artifacts on every release job run.
+- Build and compilation output is tee'd into git-ignored `tmp/logs/` files for later review.
 
 ## Progress
 - [x] Investigated reported GLIBCXX failure and reduced-functionality output.
-- [x] Add hard unpatched-Qt build guards.
+- [x] Add package-time unpatched-Qt validation.
 - [x] Harden Debian package runtime linking.
 - [x] Add package loader tests and wire them into release tests.
-- [x] Update CI workflows to block unpatched artifacts.
+- [x] Update local release scripts to block unpatched artifacts.
 - [x] Run closest local checks and record results.
 - [x] Fix CLI/man text output so patched builds print complete man-style help instead of truncated first-word paragraphs.
 - [x] Build replacement Linux `.deb` and Windows installer artifacts for 0.13.0.
@@ -85,7 +85,7 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 quiet public release verification: downloaded both `latest` and `0.13.0` GitHub release `.deb` and Windows `.exe` assets; hashes matched (`49ba0be57e79b2fda514626b0f849ca4423f8944e17e6da1969678ed0ecaf9ca` for `.deb`, `e49ef82dc074e04fab052471738c90e23006cf448cc36f4b4cdb5f734af3a1bc` for `.exe`) and `latest`/`0.13.0` assets were byte-identical.
 - 2026-06-01 quiet public release verification: installed downloaded `latest.deb`; `wkhtmltopdf https://3oak.co.uk 3oak-public-clean.pdf` exited 0, produced a 5-page PDF, and emitted no `Neither content-length`, `content-type missing`, or `SSL error ignored` warnings.
 - 2026-06-01 AVIF follow-up: patched Qt WebKit to recognize `image/avif` and decode static AVIF images by converting them to PNG with `WKHTMLTOX_AVIF_CONVERTER`, `convert`, or `magick`; Linux launches the converter through `/usr/bin/env -u LD_LIBRARY_PATH` so bundled `/opt/wkhtmltox/lib` libraries do not poison ImageMagick.
-- 2026-06-01 AVIF follow-up: added ImageMagick to Linux package/dev/CI dependencies and added an AVIF fixture to `tests/smoke/smoke.py` that verifies a rendered red center pixel.
+- 2026-06-01 AVIF follow-up: added ImageMagick to Linux package/dev dependencies and added an AVIF fixture to `tests/smoke/smoke.py` that verifies a rendered red center pixel.
 - 2026-06-01 AVIF follow-up validation passed: `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `git diff --check`; `python3 -m py_compile tests/smoke/smoke.py`; `shellcheck scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py`; `tests/deb/deb-loader.sh artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb`.
 - 2026-06-01 AVIF follow-up: rebuilt and installed the Linux `.deb`; package control now depends on `libc6 (>= 2.31), imagemagick`; `wkhtmltopdf https://3oak.co.uk /tmp/3oak-avif-final.pdf` exited 0 and produced an 819K 8-page PDF in 9.42s locally.
 - 2026-06-01 AVIF follow-up rebuilt artifact checksums: Linux `.deb` `656b177465d14c8a88e2bdf5bb33737a5b67962511e2f2706df05e9174d0a172`; Windows installer `8aae400de69006c916c6a6b915308611fab15cf5f18bdffbd094517a2f1ef87d`.
@@ -101,4 +101,4 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 Docker E2E script validation passed: `bash -n tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `shellcheck tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `git diff --check`.
 
 ## Debt
-- A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.
+- A full artifact build requires a patched Qt toolchain. If unavailable locally, release packaging should fail rather than publishing reduced-functionality packages.

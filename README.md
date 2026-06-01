@@ -48,8 +48,8 @@ During `.deb` installation, stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/
 Linux `.deb` packages recommend ImageMagick for optional AVIF image decoding. If using an unpacked/custom build, install ImageMagick or set `WKHTMLTOX_AVIF_CONVERTER=/path/to/converter` to a command that converts `input.avif output.png`.
 
 ```sh
-make           # install/check deps, then configure + build
-make test      # smoke test the development build
+make           # build the Linux .deb inside Docker
+make test      # build and run Linux package checks
 ```
 
 Install and clean:
@@ -63,14 +63,14 @@ make clean
 make distclean
 ```
 
-Useful development knobs: `JOBS=8`, `QT=4`, `USE_CCACHE=0`, `AUTO_DEPS=0`.
+Useful build knobs: `JOBS=8`, `PATCHED_QT_DIR=/path/to/patched-qt-build-root`, `DOCKER_IMAGE=registry/name:tag`.
 
 Release helpers:
 
 ```sh
 make release DRY_RUN=1
 make release VERSION=0.13.0 PUSH=0
-make release BUMP=patch
+make release BUMP=patch  # build Linux .deb + Windows installer, then upload
 ```
 
 ## License

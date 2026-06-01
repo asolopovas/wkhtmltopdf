@@ -13,7 +13,7 @@ Install development packages needed for local unpatched wkhtmltopdf builds and
 smoke tests on Debian/Ubuntu systems.
 
 Options:
-  --qt 5       Install Qt 5 build dependencies (default, matches CI qt5 job)
+  --qt 5       Install Qt 5 build dependencies (default)
   --qt 4       Install legacy Qt 4 build dependencies (for old distributions)
   --dry-run    Print the apt-get commands without running them
   -h, --help   Show this help

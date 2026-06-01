@@ -28,7 +28,7 @@ Identify concrete update opportunities in the library and implement the safest l
 ## Update opportunities found
 
 - Qt/WebKit modernization is blocked by the current patched Qt 4.8.7 support lane; decide whether Qt4 remains official before larger API churn.
-- Align duplicate release/official workflows or explicitly document the legacy Qt4 packaging path.
+- Keep local release package scripts simple and avoid reintroducing duplicate CI packaging paths.
 - Incrementally replace deprecated Qt APIs (`QRegExp`, `foreach`, string-based `SIGNAL`/`SLOT`) after the Qt support policy is clear.
 - Improve PDF link fixture coverage under a patched-Qt build where PDF link annotations are enabled.
 - Review broader generated docs assets separately before touching `docs/libwkhtmltox/` output.

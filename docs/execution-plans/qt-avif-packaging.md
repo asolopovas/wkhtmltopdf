@@ -16,13 +16,13 @@ Clarify patched vs system Qt build modes and make the system-Qt release/developm
 
 - [x] Docs explain that patched Qt 4 gives wkhtmltopdf-specific PDF features while system Qt 5 enables distro image plugins such as AVIF.
 - [x] Qt 5 dev dependency install attempts `qt5-avif-image-plugin` without breaking older distros where it is unavailable.
-- [x] Linux release workflow installs `qt5-avif-image-plugin` before packaging.
+- [x] Local Linux release packaging installs `qt5-avif-image-plugin` before packaging.
 - [x] Linux package dependency metadata reflects the libc version of the build base.
 - [x] Validation confirms an extracted `qt5-avif-image-plugin` is loaded by `wkhtmltopdf` for `https://3oak.co.uk`.
 
 ## Validation log
 
-- [x] YAML parsed for `.github/workflows/release.yml`, `.github/workflows/unpatched.yml`, and `.github/workflows/official.yml`.
+- [x] Local package scripts validated.
 - [x] `bash -n scripts/install-dev-deps.sh scripts/build-linux-deb.sh scripts/build-windows-msys2.sh`.
 - [x] `./scripts/install-dev-deps.sh --qt 5 --dry-run` includes optional `qt5-avif-image-plugin` installation.
 - [x] `docker run --rm ubuntu:24.04 ... apt-get install qt5-avif-image-plugin ... find ... libqavif5.so`.
