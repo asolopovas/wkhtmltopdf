@@ -14,6 +14,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -78,16 +79,92 @@ def assert_magic(path: Path, magic: bytes) -> None:
         raise AssertionError(f"{path} has magic {data!r}, expected {magic!r}")
 
 
-def assert_png_size(path: Path, width: int, height: int) -> None:
+def png_info(path: Path) -> tuple[int, int, int, int, bytes]:
     data = path.read_bytes()
     assert_magic(path, PNG_MAGIC)
     if len(data) < 24 or data[12:16] != b"IHDR":
         raise AssertionError(f"{path} is missing a PNG IHDR chunk")
-    actual_width, actual_height = struct.unpack(">II", data[16:24])
+
+    pos = 8
+    width = height = bit_depth = color_type = None
+    idat = bytearray()
+    while pos + 12 <= len(data):
+        chunk_len = struct.unpack(">I", data[pos : pos + 4])[0]
+        chunk_type = data[pos + 4 : pos + 8]
+        chunk = data[pos + 8 : pos + 8 + chunk_len]
+        pos += 12 + chunk_len
+        if chunk_type == b"IHDR":
+            width, height, bit_depth, color_type, _, _, interlace = struct.unpack(
+                ">IIBBBBB", chunk
+            )
+            if bit_depth != 8 or color_type not in (2, 6) or interlace:
+                raise AssertionError(
+                    f"{path} has unsupported PNG format: bit_depth={bit_depth}, "
+                    f"color_type={color_type}, interlace={interlace}"
+                )
+        elif chunk_type == b"IDAT":
+            idat.extend(chunk)
+        elif chunk_type == b"IEND":
+            break
+
+    if width is None or height is None:
+        raise AssertionError(f"{path} is missing PNG metadata")
+    return width, height, bit_depth, color_type, bytes(idat)
+
+
+def assert_png_size(path: Path, width: int, height: int) -> None:
+    actual_width, actual_height, _, _, _ = png_info(path)
     if (actual_width, actual_height) != (width, height):
         raise AssertionError(
             f"{path} is {actual_width}x{actual_height}, expected {width}x{height}"
         )
+
+
+def png_pixel(path: Path, x: int, y: int) -> tuple[int, int, int]:
+    width, height, _, color_type, idat = png_info(path)
+    if not (0 <= x < width and 0 <= y < height):
+        raise AssertionError(f"pixel {x},{y} is outside {path} size {width}x{height}")
+
+    bytes_per_pixel = 3 if color_type == 2 else 4
+    stride = width * bytes_per_pixel
+    raw = zlib.decompress(idat)
+    previous = bytearray(stride)
+    offset = 0
+    for row_index in range(height):
+        filter_type = raw[offset]
+        offset += 1
+        row = bytearray(raw[offset : offset + stride])
+        offset += stride
+        for index in range(stride):
+            left = row[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            up = previous[index]
+            upper_left = previous[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            if filter_type == 1:
+                row[index] = (row[index] + left) & 0xFF
+            elif filter_type == 2:
+                row[index] = (row[index] + up) & 0xFF
+            elif filter_type == 3:
+                row[index] = (row[index] + ((left + up) // 2)) & 0xFF
+            elif filter_type == 4:
+                predictor = left + up - upper_left
+                pa = abs(predictor - left)
+                pb = abs(predictor - up)
+                pc = abs(predictor - upper_left)
+                if pa <= pb and pa <= pc:
+                    paeth = left
+                elif pb <= pc:
+                    paeth = up
+                else:
+                    paeth = upper_left
+                row[index] = (row[index] + paeth) & 0xFF
+            elif filter_type != 0:
+                raise AssertionError(f"{path} uses unsupported PNG filter {filter_type}")
+        if row_index == y:
+            start = x * bytes_per_pixel
+            return tuple(row[start : start + 3])
+        previous = row
+
+    raise AssertionError(f"pixel {x},{y} was not decoded from {path}")
 
 
 def main() -> int:
@@ -136,6 +213,7 @@ def main() -> int:
     simple = FIXTURES / "simple.html"
     styled = FIXTURES / "styled.html"
     selector = FIXTURES / "selector.html"
+    avif = FIXTURES / "avif.html"
     header = FIXTURES / "header.html"
     footer = FIXTURES / "footer.html"
 
@@ -253,6 +331,29 @@ def main() -> int:
             base_url_png,
         ], env, input_data=stdin_html)
         assert_png_size(base_url_png, 64, 32)
+
+        if os.environ.get("WKHTMLTOX_AVIF_CONVERTER") or shutil.which("convert") or shutil.which("magick"):
+            avif_png = tmpdir / "avif.png"
+            run([
+                wkhtmltoimage,
+                "--quiet",
+                "--format",
+                "png",
+                "--width",
+                "64",
+                "--height",
+                "64",
+                avif,
+                avif_png,
+            ], env)
+            red, green, blue = png_pixel(avif_png, 32, 32)
+            if red < 120 or green > 80 or blue > 80:
+                raise AssertionError(
+                    f"{wkhtmltoimage} did not render the AVIF fixture; "
+                    f"center pixel is rgb({red}, {green}, {blue})"
+                )
+        else:
+            print("skipping AVIF smoke test: no ImageMagick converter found")
 
     print("smoke tests passed")
     return 0

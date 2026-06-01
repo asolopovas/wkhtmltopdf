@@ -14,6 +14,8 @@ Release assets for this fork live in [asolopovas/wkhtmltopdf releases](https://g
 
 The 0.13.0 Linux `.deb` and Windows installer are built only with wkhtmltopdf patched Qt. Verify an install with `wkhtmltopdf --version`; it must include `(with patched Qt)`. If `wkhtmltopdf --help` reports `Reduced Functionality`, an old unpatched binary is being executed or a bad artifact was installed.
 
+Linux `.deb` packages use ImageMagick to decode AVIF images for the bundled Qt WebKit renderer. Install with `apt`/`apt-get -f install` if `dpkg -i` reports the `imagemagick` dependency is missing.
+
 Generic Linux tarballs are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
 
 ## Archive

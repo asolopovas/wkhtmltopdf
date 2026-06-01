@@ -28,11 +28,13 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - [x] Fix CLI/man text output so patched builds print complete man-style help instead of truncated first-word paragraphs.
 - [x] Build replacement Linux `.deb` and Windows installer artifacts for 0.13.0.
 - [x] Fix Qt 4/OpenSSL 1.1 HTTPS rendering failure and JavaScript-triggered indeterminate upload aborts.
+- [x] Add AVIF decoding for patched Qt WebKit through ImageMagick-compatible converters.
 
 ## Decisions
 - Do not hide reduced functionality by changing help text; reject unpatched Qt at build/test time instead.
 - Keep the release version pinned to `0.13.0`.
 - Keep `/usr/lib/<multiarch>/libwkhtmltox.so*` symlinks for C API compatibility, but rely on ELF RUNPATH for private dependencies instead of global `/opt` ld.so configuration.
+- Use ImageMagick as the practical AVIF bridge for Qt 4 WebKit instead of adding a new native codec stack to the forked Qt tree.
 
 ## Validation
 - `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh` passed.
@@ -77,6 +79,11 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 quiet HTTPS follow-up rebuilt artifact checksums: Linux `.deb` `49ba0be57e79b2fda514626b0f849ca4423f8944e17e6da1969678ed0ecaf9ca`; Windows installer `e49ef82dc074e04fab052471738c90e23006cf448cc36f4b4cdb5f734af3a1bc`.
 - 2026-06-01 quiet public release verification: downloaded both `latest` and `0.13.0` GitHub release `.deb` and Windows `.exe` assets; hashes matched (`49ba0be57e79b2fda514626b0f849ca4423f8944e17e6da1969678ed0ecaf9ca` for `.deb`, `e49ef82dc074e04fab052471738c90e23006cf448cc36f4b4cdb5f734af3a1bc` for `.exe`) and `latest`/`0.13.0` assets were byte-identical.
 - 2026-06-01 quiet public release verification: installed downloaded `latest.deb`; `wkhtmltopdf https://3oak.co.uk 3oak-public-clean.pdf` exited 0, produced a 5-page PDF, and emitted no `Neither content-length`, `content-type missing`, or `SSL error ignored` warnings.
+- 2026-06-01 AVIF follow-up: patched Qt WebKit to recognize `image/avif` and decode static AVIF images by converting them to PNG with `WKHTMLTOX_AVIF_CONVERTER`, `convert`, or `magick`; Linux launches the converter through `/usr/bin/env -u LD_LIBRARY_PATH` so bundled `/opt/wkhtmltox/lib` libraries do not poison ImageMagick.
+- 2026-06-01 AVIF follow-up: added ImageMagick to Linux package/dev/CI dependencies and added an AVIF fixture to `tests/smoke/smoke.py` that verifies a rendered red center pixel.
+- 2026-06-01 AVIF follow-up validation passed: `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `git diff --check`; `python3 -m py_compile tests/smoke/smoke.py`; `shellcheck scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py`; `tests/deb/deb-loader.sh artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb`.
+- 2026-06-01 AVIF follow-up: rebuilt and installed the Linux `.deb`; package control now depends on `libc6 (>= 2.31), imagemagick`; `wkhtmltopdf https://3oak.co.uk /tmp/3oak-avif-final.pdf` exited 0 and produced an 819K 8-page PDF in 9.42s locally.
+- 2026-06-01 AVIF follow-up rebuilt artifact checksums: Linux `.deb` `656b177465d14c8a88e2bdf5bb33737a5b67962511e2f2706df05e9174d0a172`; Windows installer `8aae400de69006c916c6a6b915308611fab15cf5f18bdffbd094517a2f1ef87d`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.

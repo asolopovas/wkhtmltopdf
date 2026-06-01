@@ -335,17 +335,17 @@ Section: utils
 Priority: optional
 Architecture: ${package_arch}
 Maintainer: wkhtmltopdf maintainers <support@wkhtmltopdf.org>
-Depends: libc6 (>= ${libc_version})
+Depends: libc6 (>= ${libc_version}), imagemagick
 Conflicts: wkhtmltopdf
 Replaces: wkhtmltopdf
 Provides: wkhtmltopdf
 Homepage: https://wkhtmltopdf.org/
 Description: convert HTML to PDF and images using bundled patched Qt WebKit
  wkhtmltox contains wkhtmltopdf and wkhtmltoimage command line tools plus
- libwkhtmltox. Runtime Qt/WebKit libraries and baseline fonts are bundled so
- the package can be installed directly with dpkg on amd64 Debian, Ubuntu, and
- Linux Mint systems with a compatible glibc. Release packages are built only
- with wkhtmltopdf patched Qt to provide full functionality.
+ libwkhtmltox. Runtime Qt/WebKit libraries and baseline fonts are bundled;
+ ImageMagick is used for AVIF image decoding on amd64 Debian, Ubuntu, and Linux
+ Mint systems with a compatible glibc. Release packages are built only with
+ wkhtmltopdf patched Qt to provide full functionality.
 EOF
 
 cat > "${package_root}/DEBIAN/preinst" <<'EOF'

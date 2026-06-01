@@ -45,6 +45,8 @@ Release packages in this fork are full-functionality patched-Qt builds. `wkhtmlt
 
 During `.deb` installation, stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` files are moved aside because they can shadow the packaged `/usr/bin` wrappers and make an old unpatched binary appear to be the new release.
 
+Linux `.deb` packages depend on ImageMagick for AVIF image decoding. If using an unpacked/custom build, install ImageMagick or set `WKHTMLTOX_AVIF_CONVERTER=/path/to/converter` to a command that converts `input.avif output.png`.
+
 ```sh
 make           # install/check deps, then configure + build
 make test      # smoke test the development build

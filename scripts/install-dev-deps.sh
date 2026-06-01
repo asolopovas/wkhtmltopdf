@@ -82,6 +82,7 @@ fi
 packages=(
 	build-essential
 	ca-certificates
+	imagemagick
 	python3
 )
 optional_packages=()
@@ -126,6 +127,6 @@ fi
 "${apt_install_runner[@]}" install -y --no-install-recommends "${packages[@]}"
 if ((${#optional_packages[@]})); then
 	if ! "${apt_install_runner[@]}" install -y --no-install-recommends "${optional_packages[@]}"; then
-		echo "WARNING: optional Qt AVIF plugin package is unavailable; AVIF images will not render unless an equivalent Qt image plugin is installed." >&2
+		echo "WARNING: optional Qt AVIF plugin package is unavailable for system Qt 5 builds." >&2
 	fi
 fi
