@@ -20,6 +20,7 @@ VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "wkhtmltox"
 VIAddVersionKey "CompanyName" "wkhtmltopdf"
 VIAddVersionKey "FileDescription" "wkhtmltox installer"
+VIAddVersionKey "LegalCopyright" "Copyright wkhtmltopdf contributors"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
 

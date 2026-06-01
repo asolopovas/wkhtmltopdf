@@ -13,7 +13,21 @@ case "${release_output}" in
     *) release_output="${REPO_DIR}/${release_output}" ;;
 esac
 qmake_bin="${QMAKE:-qmake}"
-make_jobs="${MAKE_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '2')}"
+detect_make_jobs() {
+    if [[ -n "${MAKE_JOBS:-}" ]]; then
+        printf '%s\n' "${MAKE_JOBS}"
+    elif command -v nproc >/dev/null 2>&1; then
+        nproc
+    elif [[ -n "${NUMBER_OF_PROCESSORS:-}" ]]; then
+        printf '%s\n' "${NUMBER_OF_PROCESSORS}"
+    elif command -v getconf >/dev/null 2>&1; then
+        getconf _NPROCESSORS_ONLN
+    else
+        printf '2\n'
+    fi
+}
+make_jobs="$(detect_make_jobs)"
+echo "using ${make_jobs} parallel build jobs"
 ubuntu_series="${RELEASE_SERIES:-noble}"
 package_arch="${DEB_ARCH:-$(dpkg --print-architecture)}"
 multiarch="${DEB_HOST_MULTIARCH:-$(dpkg-architecture -qDEB_HOST_MULTIARCH)}"

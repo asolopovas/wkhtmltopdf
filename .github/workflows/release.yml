@@ -82,37 +82,22 @@ jobs:
         with:
           msystem: UCRT64
           update: true
+          cache: true
           install: >-
             base-devel
             git
             make
+            mingw-w64-ucrt-x86_64-angleproject
             mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-nsis
             mingw-w64-ucrt-x86_64-qt5-base
             mingw-w64-ucrt-x86_64-qt5-svg
             mingw-w64-ucrt-x86_64-qt5-tools
             mingw-w64-ucrt-x86_64-qt5-xmlpatterns
             mingw-w64-ucrt-x86_64-qtwebkit
-      - name: install NSIS
-        shell: powershell
-        run: choco install nsis --yes --no-progress
-      - name: build Windows application layout
+      - name: build Windows setup installer
         shell: msys2 {0}
         run: scripts/build-windows-msys2.sh
-      - name: build NSIS setup installer
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          $version = $env:RELEASE_VERSION
-          $outDir = Join-Path $PWD "artifacts\windows-exe"
-          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-          $sourceDir = Join-Path $PWD "package\wkhtmltox"
-          $installer = Join-Path $outDir "wkhtmltox-$version-1.windows-ucrt64-installer.exe"
-          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" "/DVERSION=$version" "/DSOURCE_DIR=$sourceDir" "/DOUT_FILE=$installer" "scripts\wkhtmltox.nsi"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Get-ChildItem $outDir -Filter "*.exe" |
-            Get-FileHash -Algorithm SHA256 |
-            ForEach-Object { "$($_.Hash.ToLower())  windows-exe/$([IO.Path]::GetFileName($_.Path))" } |
-            Set-Content -Encoding ascii "artifacts\checksums-windows-exe.txt"
       - name: install and smoke-test setup installer
         shell: powershell
         run: |

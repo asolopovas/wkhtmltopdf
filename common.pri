@@ -24,7 +24,7 @@ INCLUDEPATH += ../../src/lib
 RESOURCES    = $$PWD/wkhtmltopdf.qrc
 
 win32:      CONFIG += console
-win32-g++*: QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++
+win32-g++*:CONFIG(static, shared|static): QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++
 
 QT += webkit network xmlpatterns svg
 greaterThan(QT_MAJOR_VERSION, 4) {

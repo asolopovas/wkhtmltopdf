@@ -24,7 +24,37 @@ if [[ -z "${qmake_bin}" ]]; then
     echo "qmake not found; install the MSYS2 Qt 5 base package" >&2
     exit 127
 fi
-make_jobs="${MAKE_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '2')}"
+
+makensis_bin="${MAKENSIS:-}"
+if [[ -z "${makensis_bin}" ]]; then
+    for candidate in makensis makensis.exe /ucrt64/bin/makensis.exe /mingw64/bin/makensis.exe; do
+        if command -v "${candidate}" >/dev/null 2>&1; then
+            makensis_bin="${candidate}"
+            break
+        fi
+    done
+fi
+if [[ -z "${makensis_bin}" ]]; then
+    echo "makensis not found; install the MSYS2 NSIS package" >&2
+    exit 127
+fi
+
+detect_make_jobs() {
+    if [[ -n "${MAKE_JOBS:-}" ]]; then
+        printf '%s\n' "${MAKE_JOBS}"
+    elif command -v nproc >/dev/null 2>&1; then
+        nproc
+    elif [[ -n "${NUMBER_OF_PROCESSORS:-}" ]]; then
+        printf '%s\n' "${NUMBER_OF_PROCESSORS}"
+    elif command -v getconf >/dev/null 2>&1; then
+        getconf _NPROCESSORS_ONLN
+    else
+        printf '2\n'
+    fi
+}
+make_jobs="$(detect_make_jobs)"
+
+echo "using ${make_jobs} parallel build jobs"
 
 case "${release_version}" in
     *[!0-9A-Za-z.+:~_-]*|'')
@@ -45,16 +75,44 @@ export MSYS2_ARG_CONV_EXCL="${MSYS2_ARG_CONV_EXCL:-};INSTALLBASE="
 cd "${build_dir}"
 "${qmake_bin}" "${REPO_DIR}/wkhtmltopdf.pro" CONFIG+=release CONFIG+=silent INSTALLBASE=/wkhtmltox
 
+preseed_qmake_resource_object() {
+    local project_dir="$1"
+    local target_name="$2"
+    local empty_c="${project_dir}/.empty-resource.c"
+
+    mkdir -p "${project_dir}/release" "${project_dir}/debug"
+    : > "${empty_c}"
+    for build_config in release debug; do
+        local resource_object="${project_dir}/${build_config}/${target_name}_resource_res.o"
+        if [[ ! -e "${resource_object}" ]]; then
+            "${CC:-gcc}" -x c -c "${empty_c}" -o "${resource_object}"
+        fi
+    done
+    rm -f "${empty_c}"
+}
+
+# qmake warns when its auto-generated Windows resource object does not exist
+# before the subproject Makefile is generated. Preseed valid empty objects;
+# qmake then writes the .rc files and make rebuilds these objects normally.
+preseed_qmake_resource_object "${build_dir}/src/lib" wkhtmltox
+preseed_qmake_resource_object "${build_dir}/src/pdf" wkhtmltopdf
+preseed_qmake_resource_object "${build_dir}/src/image" wkhtmltoimage
+
 # Build the library first and copy any MinGW import library beside the DLL so
 # the application subprojects can resolve -lwkhtmltox.
 make -j"${make_jobs}" sub-src-lib-make_first-ordered
 mkdir -p "${build_dir}/bin"
-mapfile -t import_libs < <(find "${build_dir}/src/lib" -type f \( -name 'libwkhtmltox*.a' -o -name 'wkhtmltox*.a' \) -print | sort -u)
+mapfile -t import_libs < <(find "${build_dir}/src/lib" "${build_dir}/bin" -type f \( -name 'libwkhtmltox*.a' -o -name 'wkhtmltox*.a' \) -print | sort -u)
 if [[ "${#import_libs[@]}" -gt 0 ]]; then
-    cp "${import_libs[@]}" "${build_dir}/bin/"
+    for import_lib in "${import_libs[@]}"; do
+        if [[ "$(dirname "${import_lib}")" != "${build_dir}/bin" ]]; then
+            cp "${import_lib}" "${build_dir}/bin/"
+        fi
+    done
 else
     echo "no wkhtmltox import library found after library build" >&2
     find "${build_dir}/src/lib" "${build_dir}/bin" -maxdepth 3 -type f -print >&2 || true
+    exit 1
 fi
 
 make -j"${make_jobs}" sub-src-pdf-make_first-ordered sub-src-image-make_first-ordered
@@ -87,8 +145,10 @@ if [[ ! -e "${qmake_dir}/qmake.exe" && -e "${qmake_dir}/qmake-qt5.exe" ]]; then
     cp "${qmake_dir}/qmake-qt5.exe" "${qmake_dir}/qmake.exe"
 fi
 
-"${windeployqt_bin}" --release --compiler-runtime "${stage_dir}/bin/wkhtmltopdf.exe"
-"${windeployqt_bin}" --release --compiler-runtime "${stage_dir}/bin/wkhtmltoimage.exe"
+windeployqt_args=(--release --compiler-runtime)
+"${windeployqt_bin}" "${windeployqt_args[@]}" "${stage_dir}/bin/wkhtmltox.dll"
+"${windeployqt_bin}" "${windeployqt_args[@]}" "${stage_dir}/bin/wkhtmltopdf.exe"
+"${windeployqt_bin}" "${windeployqt_args[@]}" "${stage_dir}/bin/wkhtmltoimage.exe"
 
 cp "${REPO_DIR}/LICENSE" "${stage_dir}/LICENSE.txt"
 cp "${REPO_DIR}/README.md" "${stage_dir}/README.txt"
@@ -97,4 +157,19 @@ cp "${REPO_DIR}/README.md" "${stage_dir}/README.txt"
     cd "${stage_dir}/bin"
     ./wkhtmltopdf.exe --version
     ./wkhtmltoimage.exe --version
+)
+
+installer="${release_output}/windows-exe/wkhtmltox-${release_version}-1.windows-ucrt64-installer.exe"
+source_dir_win="$(cygpath -w "${stage_dir}")"
+installer_win="$(cygpath -w "${installer}")"
+nsi_win="$(cygpath -w "${REPO_DIR}/scripts/wkhtmltox.nsi")"
+MSYS2_ARG_CONV_EXCL='*' "${makensis_bin}" \
+    "/DVERSION=${release_version}" \
+    "/DSOURCE_DIR=${source_dir_win}" \
+    "/DOUT_FILE=${installer_win}" \
+    "${nsi_win}"
+
+(
+    cd "${release_output}"
+    find windows-exe -maxdepth 1 -type f -name '*.exe' -print | sort | xargs sha256sum > checksums-windows-exe.txt
 )
