@@ -25,6 +25,7 @@ Use the wrapper unless reproducing raw qmake behavior. The default wrapper build
 make           # install/check deps, then configure + build
 make test      # smoke test the development build
 make install PREFIX="$HOME/.local"
+make install PREFIX=/usr/local # uses sudo when /usr/local is not writable
 make clean     # keep configuration
 make distclean # remove build dir
 ```

@@ -79,19 +79,27 @@ all: build
 install: build
 	+@destdir="$(DESTDIR)"; \
 	prefix="$(INSTALLBASE)"; \
-	if [ -z "$$destdir" ] && [ "$$(id -u)" != "0" ]; then \
+	install_make="$(MAKE) -C $(BUILD_DIR) install"; \
+	ldconfig_cmd=""; \
+	if [ -z "$$destdir" ]; then \
 		probe="$$prefix"; \
 		while [ ! -e "$$probe" ] && [ "$$probe" != "/" ]; do probe="$$(dirname -- "$$probe")"; done; \
-		if [ ! -w "$$probe" ]; then \
-			destdir="$(STAGEDIR)"; \
-			echo "PREFIX=$$prefix is not writable; staging under DESTDIR=$$destdir"; \
-			echo "For a real install, use: sudo make install PREFIX=$$prefix"; \
+		if [ "$$(id -u)" != "0" ] && [ ! -w "$$probe" ]; then \
+			if command -v sudo >/dev/null 2>&1; then \
+				echo "PREFIX=$$prefix is not writable; using sudo for install"; \
+				install_make="sudo $(MAKE) -C $(BUILD_DIR) install"; \
+			else \
+				echo "ERROR: PREFIX=$$prefix is not writable and sudo was not found." >&2; \
+				exit 13; \
+			fi; \
+		fi; \
+		if command -v ldconfig >/dev/null 2>&1 && { [ "$(INSTALLBASE)" = "/usr" ] || [ "$(INSTALLBASE)" = "/usr/local" ]; }; then \
+			if [ "$$(id -u)" = "0" ]; then ldconfig_cmd="ldconfig"; \
+			elif command -v sudo >/dev/null 2>&1; then ldconfig_cmd="sudo ldconfig"; fi; \
 		fi; \
 	fi; \
-	$(MAKE) -C "$(BUILD_DIR)" install INSTALL_ROOT="$$destdir" || exit $$?; \
-	if [ -z "$$destdir" ] && [ "$$(id -u)" = "0" ] && command -v ldconfig >/dev/null 2>&1 && { [ "$(INSTALLBASE)" = "/usr" ] || [ "$(INSTALLBASE)" = "/usr/local" ]; }; then \
-		ldconfig; \
-	fi
+	$$install_make INSTALL_ROOT="$$destdir" || exit $$?; \
+	if [ -n "$$ldconfig_cmd" ]; then $$ldconfig_cmd; fi
 
 stage: DESTDIR ?= $(STAGEDIR)
 stage: install
@@ -235,7 +243,7 @@ help:
 	@echo "Common commands:"
 	@echo "  make                       Install/check deps, then build system-Qt development binaries"
 	@echo "  make test                  Build and run smoke tests"
-	@echo "  make install               Install to PREFIX=$(PREFIX); stages if /usr/local is not writable"
+	@echo "  make install               Install to PREFIX=$(PREFIX); uses sudo when necessary"
 	@echo "  make install PREFIX=/path  Install to a writable prefix"
 	@echo "  make clean                 Remove compiled objects; keep configuration"
 	@echo "  make distclean             Remove BUILD_DIR=$(BUILD_DIR)"

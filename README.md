@@ -53,7 +53,8 @@ Install and clean:
 
 ```sh
 make install PREFIX="$HOME/.local"
-sudo make install PREFIX=/usr/local
+make install PREFIX=/usr/local       # uses sudo when /usr/local is not writable
+make stage PREFIX=/usr/local         # create a staged tree without installing
 make install DESTDIR="$PWD/package" PREFIX=/usr
 make clean
 make distclean
