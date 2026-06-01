@@ -110,19 +110,24 @@ if ldconfig -p | grep -F '/opt/wkhtmltox/lib/libstdc++.so.6' >/dev/null; then
 fi
 
 # Simulate a stale libwkhtmltox in /usr/local without overwriting a user's file.
-# A correct package has RUNPATH/RPATH on the real binaries and still resolves
-# libwkhtmltox.so.0 from /opt/wkhtmltox/lib.
-if [[ ! -e /usr/local/lib/libwkhtmltox.so.0 ]]; then
-    libc_path="$(ldconfig -p | awk '/libc\.so\.6 .*x86-64/ { print $NF; exit }')"
-    [[ -n "${libc_path}" && -f "${libc_path}" ]] || error "could not locate libc.so.6 for shadowing test"
-    as_root mkdir -p /usr/local/lib
-    as_root ln -s "${libc_path}" /usr/local/lib/libwkhtmltox.so.0
-    created_shadow=/usr/local/lib/libwkhtmltox.so.0
-    as_root ldconfig
-fi
+# Dynamically linked tools must resolve libwkhtmltox.so.0 from /opt/wkhtmltox/lib.
+# Static tools have no libwkhtmltox NEEDED entry and are not vulnerable to this
+# loader-shadowing case.
+if readelf -d "${install_base}/bin/wkhtmltopdf.bin" 2>/dev/null | grep -Fq '[libwkhtmltox.so.0]'; then
+    if [[ ! -e /usr/local/lib/libwkhtmltox.so.0 ]]; then
+        libc_path="$(ldconfig -p | awk '/libc\.so\.6 .*x86-64/ { print $NF; exit }')"
+        [[ -n "${libc_path}" && -f "${libc_path}" ]] || error "could not locate libc.so.6 for shadowing test"
+        as_root mkdir -p /usr/local/lib
+        as_root ln -s "${libc_path}" /usr/local/lib/libwkhtmltox.so.0
+        created_shadow=/usr/local/lib/libwkhtmltox.so.0
+        as_root ldconfig
+    fi
 
-resolved_lib="$(ldd "${install_base}/bin/wkhtmltopdf.bin" | awk '/libwkhtmltox\.so\.0/ { print $3; exit }')"
-[[ "${resolved_lib}" == "${install_base}/lib/"* ]] || error "wkhtmltopdf.bin resolves libwkhtmltox.so.0 to ${resolved_lib:-<missing>}, expected ${install_base}/lib"
+    resolved_lib="$(ldd "${install_base}/bin/wkhtmltopdf.bin" | awk '/libwkhtmltox\.so\.0/ { print $3; exit }')"
+    [[ "${resolved_lib}" == "${install_base}/lib/"* ]] || error "wkhtmltopdf.bin resolves libwkhtmltox.so.0 to ${resolved_lib:-<missing>}, expected ${install_base}/lib"
+else
+    echo "wkhtmltopdf.bin has no dynamic libwkhtmltox dependency; skipping shadow resolution check"
+fi
 
 help_text="$(env -i PATH=/usr/bin:/bin /usr/bin/wkhtmltopdf --extended-help 2>&1)"
 if grep -Eq 'Reduced Functionality|not using wkhtmltopdf patched Qt' <<<"${help_text}"; then

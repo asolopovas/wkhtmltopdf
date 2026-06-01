@@ -65,6 +65,25 @@ require_command() {
     command -v "$1" >/dev/null 2>&1 || die "$1 is required"
 }
 
+qt_header_has_patch_marker() {
+    local header include target
+    header="$1"
+    [[ -f "${header}" ]] || return 1
+    if grep -q '__EXTENSIVE_WKHTMLTOPDF_QT_HACK__' "${header}"; then
+        return 0
+    fi
+    include="$(sed -n 's/^#include "\(.*\)"/\1/p' "${header}" | head -n 1)"
+    if [[ -n "${include}" ]]; then
+        target="${include}"
+        if [[ "${target}" != /* ]]; then
+            target="$(dirname "${header}")/${target}"
+        fi
+        [[ -f "${target}" ]] && grep -q '__EXTENSIVE_WKHTMLTOPDF_QT_HACK__' "${target}"
+        return $?
+    fi
+    return 1
+}
+
 require_patched_qt() {
     require_command "${qmake_bin}"
     local qt_headers qt_version header found=false
@@ -73,7 +92,7 @@ require_patched_qt() {
     for header in \
         "${qt_headers}/QtWebKit/qwebframe.h" \
         "${qt_headers}/qwebframe.h"; do
-        if [[ -f "${header}" ]] && grep -q '__EXTENSIVE_WKHTMLTOPDF_QT_HACK__' "${header}"; then
+        if qt_header_has_patch_marker "${header}"; then
             found=true
             break
         fi

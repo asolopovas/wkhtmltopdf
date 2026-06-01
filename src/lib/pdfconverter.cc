@@ -1001,7 +1001,8 @@ void PdfConverterPrivate::spoolPage(int page) {
 
 	QWebPrinter *webPrinter = objects[currentObject].web_printer;
 	webPrinter->spoolPage(page+1);
-	foreach (const QPair<QWebElement,QRectF> & item, pageFormElements[page+1]) {
+	typedef QPair<QWebElement, QRectF> FormElementRect;
+	foreach (const FormElementRect &item, pageFormElements[page+1]) {
 		QWebElement elm = item.first;
 		QString type = elm.attribute("type");
 		QString tn = elm.tagName();
