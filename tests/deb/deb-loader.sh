@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 script_name="$(basename -- "$0")"
-expected_version="${EXPECTED_WKHTMLTOX_DEB_VERSION:-0.13.0-1.linux}"
+expected_version="${EXPECTED_WKHTMLTOX_DEB_VERSION:-1:0.13.0-1.linux}"
 install_base="/opt/wkhtmltox"
 # A previously installed broken wkhtmltox package can put /opt/wkhtmltox/lib
 # into ld.so.cache. Keep Debian/binutils tooling on system libraries so this
@@ -52,6 +52,11 @@ done
 version="$(dpkg-deb -f "${deb}" Version)"
 [[ "${version}" == "${expected_version}" ]] || error "deb version is ${version}, expected ${expected_version}"
 
+depends="$(dpkg-deb -f "${deb}" Depends)"
+if grep -Eq '(^|, )[[:alnum:].+:-]*imagemagick[[:alnum:].+:-]*([, ]|$)' <<<"${depends}"; then
+    error "ImageMagick must not be a hard dependency; AVIF conversion is optional"
+fi
+
 deb_contents="$(dpkg-deb -c "${deb}")"
 if grep -Fq '/etc/ld.so.conf.d/wkhtmltox.conf' <<<"${deb_contents}"; then
     error "package must not globally publish ${install_base}/lib via /etc/ld.so.conf.d/wkhtmltox.conf"
@@ -88,6 +93,9 @@ check_elf_runpaths
 
 as_root dpkg -i "${deb}"
 
+installed_version="$(dpkg-query -W -f='${Version}' wkhtmltox)"
+[[ "${installed_version}" == "${expected_version}" ]] || error "installed version is ${installed_version}, expected ${expected_version}"
+
 pdf_version="$(env -i PATH=/usr/bin:/bin /usr/bin/wkhtmltopdf --version 2>&1)"
 image_version="$(env -i PATH=/usr/bin:/bin /usr/bin/wkhtmltoimage --version 2>&1)"
 case "${pdf_version}" in
@@ -107,6 +115,18 @@ esac
 
 if ldconfig -p | grep -F '/opt/wkhtmltox/lib/libstdc++.so.6' >/dev/null; then
     error "ldconfig globally exposes bundled ${install_base}/lib/libstdc++.so.6"
+fi
+
+for tool in wkhtmltopdf wkhtmltoimage; do
+    local_path="/usr/local/bin/${tool}"
+    if [[ -e "${local_path}" || -L "${local_path}" ]]; then
+        resolved_path="$(readlink -f "${local_path}" 2>/dev/null || true)"
+        [[ "${resolved_path}" == "/usr/bin/${tool}" ]] || error "${local_path} resolves to ${resolved_path:-<missing>}, expected /usr/bin/${tool}"
+    fi
+done
+
+if compgen -G '/usr/local/lib/libwkhtmltox.so*' >/dev/null; then
+    error "shadowing /usr/local/lib/libwkhtmltox.so* files remain after install"
 fi
 
 # Simulate a stale libwkhtmltox in /usr/local without overwriting a user's file.

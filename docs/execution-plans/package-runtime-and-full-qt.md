@@ -10,11 +10,14 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - CI release/unpatched workflows so bad artifacts cannot be published.
 
 ## Acceptance criteria
-- `VERSION` remains `0.13.0`.
+- `VERSION` remains `0.13.0`, and Linux Debian packages use epoch `1:` so they upgrade the upstream `1:0.12.6.1-3.bookworm` package cleanly.
 - Release builds fail early with a clear error when qmake points at unpatched Qt.
 - `wkhtmltopdf --version` for tested artifacts includes `(with patched Qt)` and help does not contain `Reduced Functionality`.
 - The `.deb` does not install `/etc/ld.so.conf.d/wkhtmltox.conf` and does not publish `/opt/wkhtmltox/lib/libstdc++.so.6` via `ldconfig`.
 - Packaged ELF files have a private runtime path to `/opt/wkhtmltox/lib`.
+- Optional AVIF conversion packages are not hard Debian dependencies, so `dpkg -i` can install the `.deb` on hosts without resolving ImageMagick first.
+- The Linux `.deb` moves stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` out of the way and leaves `/usr/local/bin` resolving to the packaged wrappers.
+- A small Docker E2E harness proves the `.deb` installs with plain `dpkg -i` in fresh Ubuntu/Debian containers without building wkhtmltopdf or FrankenPHP.
 - Package tests cover direct `/opt` execution, `/usr/bin` wrapper execution, stale `/usr/local/lib/libwkhtmltox.so.0` shadowing, and smoke rendering.
 - Build and compilation output is tee'd into git-ignored `tmp/logs/` files for later review, and CI uploads those logs as artifacts on every release job run.
 
@@ -33,8 +36,10 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 ## Decisions
 - Do not hide reduced functionality by changing help text; reject unpatched Qt at build/test time instead.
 - Keep the release version pinned to `0.13.0`.
+- Use Debian epoch `1:` for Linux `.deb` metadata because the old upstream Bookworm package used epoch `1:` and otherwise `dpkg` treats `0.13.0-1.linux` as a downgrade.
 - Keep `/usr/lib/<multiarch>/libwkhtmltox.so*` symlinks for C API compatibility, but rely on ELF RUNPATH for private dependencies instead of global `/opt` ld.so configuration.
 - Use ImageMagick as the practical AVIF bridge for Qt 4 WebKit instead of adding a new native codec stack to the forked Qt tree.
+- Keep ImageMagick as a Debian `Recommends`, not `Depends`, because AVIF rendering is optional and a hard dependency can make unrelated host installs fail.
 
 ## Validation
 - `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh` passed.
@@ -87,6 +92,13 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 AVIF public release verification: downloaded both `latest` and `0.13.0` GitHub release `.deb` and Windows `.exe` assets; hashes matched (`656b177465d14c8a88e2bdf5bb33737a5b67962511e2f2706df05e9174d0a172` for `.deb`, `8aae400de69006c916c6a6b915308611fab15cf5f18bdffbd094517a2f1ef87d` for `.exe`) and `latest`/`0.13.0` assets were byte-identical.
 - 2026-06-01 AVIF public release verification: installed downloaded `latest.deb`; `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py` passed including the AVIF fixture; `wkhtmltopdf https://3oak.co.uk /tmp/wkhtmltox-avif-public-verify/3oak-public-avif.pdf` exited 0, produced an 819K 8-page PDF, and emitted no `Neither content-length`, `content-type missing`, or `SSL error ignored` warnings.
 - 2026-06-01 AVIF public release verification: extracted downloaded `latest.exe` with `7z` and verified `bin/wkhtmltopdf.exe` contains `0.13.0 (with patched Qt)`, `image/avif`, and `WKHTMLTOX_AVIF_CONVERTER`.
+- 2026-06-01 dependency follow-up: reproduced the clean Trixie install failure for the previous package: `docker run --rm -v /home/andrius/www/wkhtmltox_0.13.0-1.linux_amd64.deb:/tmp/wkhtmltox.deb:ro debian:trixie-slim sh -eux -c 'dpkg -i /tmp/wkhtmltox.deb'` failed because `wkhtmltox depends on imagemagick; however: Package imagemagick is not installed`.
+- 2026-06-01 dependency follow-up: changed Linux package metadata so ImageMagick is a `Recommends`, not a hard `Depends`, and added `tests/deb/deb-loader.sh` coverage to reject hard ImageMagick dependencies.
+- 2026-06-01 dependency follow-up validation passed: `bash -n scripts/build-linux-deb.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `git diff --check`; `shellcheck scripts/build-linux-deb.sh tests/deb/deb-loader.sh scripts/install-dev-deps.sh`; `docker run --rm -v /home/andrius/www/wkhtmltox_0.13.0-1.linux_amd64.deb:/tmp/wkhtmltox.deb:ro debian:trixie-slim sh -eux -c 'dpkg -i /tmp/wkhtmltox.deb && wkhtmltopdf --version'`; `tests/deb/deb-loader.sh /home/andrius/www/wkhtmltox_0.13.0-1.linux_amd64.deb`.
+- 2026-06-01 dependency follow-up rebuilt local artifact checksum: Linux `.deb` `f97d65fbcbf7e892f3291af56d87fc315df3be7d7b215024c01221410901c587`; previous hard-ImageMagick artifact was saved as `/home/andrius/www/wkhtmltox_0.13.0-1.linux_amd64.hard-imagemagick.bak.deb` with checksum `656b177465d14c8a88e2bdf5bb33737a5b67962511e2f2706df05e9174d0a172`.
+- 2026-06-01 Docker E2E follow-up: added `tests/deb/e2e-docker.sh`, `tests/deb/Dockerfile.e2e`, and `tests/deb/e2e-install-container.sh` to validate a supplied `.deb` in fresh containers with only `dpkg -i` plus version, symlink, stale library, and reduced-functionality assertions.
+- 2026-06-01 Docker E2E validation passed for public release asset `c0f9dc53987248e3a24214b0acbee9cfc646a35837942a397ee6a533470350de`: `tests/deb/e2e-docker.sh /tmp/opencode/release-epoch-verify/latest/wkhtmltox_0.13.0-1.linux_amd64.deb` across `ubuntu:20.04`, `ubuntu:22.04`, `ubuntu:24.04`, `debian:bookworm-slim`, and `debian:trixie-slim`.
+- 2026-06-01 Docker E2E script validation passed: `bash -n tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `shellcheck tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `git diff --check`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.

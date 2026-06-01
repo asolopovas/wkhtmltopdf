@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=ubuntu:24.04
+FROM ${BASE_IMAGE}
+
+COPY wkhtmltox.deb /tmp/wkhtmltox.deb
+COPY e2e-install-container.sh /usr/local/bin/e2e-install-container
+
+RUN chmod 0755 /usr/local/bin/e2e-install-container
+CMD ["/usr/local/bin/e2e-install-container"]

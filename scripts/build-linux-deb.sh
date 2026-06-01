@@ -51,6 +51,7 @@ package_series="${RELEASE_SERIES:-linux}"
 package_arch="${DEB_ARCH:-$("${system_tool_env[@]}" dpkg --print-architecture)}"
 multiarch="${DEB_HOST_MULTIARCH:-$("${system_tool_env[@]}" dpkg-architecture -qDEB_HOST_MULTIARCH)}"
 package_name="wkhtmltox_${release_version}-${release_iteration}.${package_series}_${package_arch}"
+debian_version="${DEB_VERSION:-1:${release_version}-${release_iteration}.${package_series}}"
 install_base="/opt/wkhtmltox"
 libc_version="$("${system_tool_env[@]}" dpkg-query -W -f="\${Version}" libc6 | sed 's/-.*//')"
 
@@ -330,12 +331,13 @@ done
 mkdir -p "${package_root}/DEBIAN"
 cat > "${package_root}/DEBIAN/control" <<EOF
 Package: wkhtmltox
-Version: ${release_version}-${release_iteration}.${package_series}
+Version: ${debian_version}
 Section: utils
 Priority: optional
 Architecture: ${package_arch}
 Maintainer: wkhtmltopdf maintainers <support@wkhtmltopdf.org>
-Depends: libc6 (>= ${libc_version}), imagemagick
+Depends: libc6 (>= ${libc_version})
+Recommends: imagemagick | graphicsmagick-imagemagick-compat
 Conflicts: wkhtmltopdf
 Replaces: wkhtmltopdf
 Provides: wkhtmltopdf
@@ -343,9 +345,10 @@ Homepage: https://wkhtmltopdf.org/
 Description: convert HTML to PDF and images using bundled patched Qt WebKit
  wkhtmltox contains wkhtmltopdf and wkhtmltoimage command line tools plus
  libwkhtmltox. Runtime Qt/WebKit libraries and baseline fonts are bundled;
- ImageMagick is used for AVIF image decoding on amd64 Debian, Ubuntu, and Linux
- Mint systems with a compatible glibc. Release packages are built only with
- wkhtmltopdf patched Qt to provide full functionality.
+ ImageMagick-compatible converters can be used for AVIF image decoding on amd64
+ Debian, Ubuntu, and Linux Mint systems with a compatible glibc. Release
+ packages are built only with wkhtmltopdf patched Qt to provide full
+ functionality.
 EOF
 
 cat > "${package_root}/DEBIAN/preinst" <<'EOF'
@@ -354,6 +357,29 @@ set -e
 conf=/etc/ld.so.conf.d/wkhtmltox.conf
 if [ -f "$conf" ] && grep -Fxq '/opt/wkhtmltox/lib' "$conf"; then
     rm -f "$conf"
+fi
+
+stamp=$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || echo now)
+for tool in wkhtmltopdf wkhtmltoimage; do
+    path=/usr/local/bin/$tool
+    if [ -e "$path" ] || [ -L "$path" ]; then
+        backup="$path.wkhtmltox-shadowed.$stamp"
+        mv "$path" "$backup"
+        echo "wkhtmltox: moved old $path to $backup" >&2
+    fi
+done
+
+backup_dir=/usr/local/lib/wkhtmltox-shadowed-$stamp
+moved_libs=false
+for path in /usr/local/lib/libwkhtmltox.so*; do
+    if [ -e "$path" ] || [ -L "$path" ]; then
+        mkdir -p "$backup_dir"
+        mv "$path" "$backup_dir/"
+        moved_libs=true
+    fi
+done
+if [ "$moved_libs" = true ]; then
+    echo "wkhtmltox: moved old /usr/local/lib/libwkhtmltox.so* files to $backup_dir" >&2
 fi
 EOF
 chmod 0755 "${package_root}/DEBIAN/preinst"
@@ -376,8 +402,11 @@ for tool in wkhtmltopdf wkhtmltoimage; do
         fi
         backup="$path.wkhtmltox-shadowed.$stamp"
         mv "$path" "$backup"
+        echo "wkhtmltox: moved old $path to $backup" >&2
+    fi
+    if [ ! -e "$path" ] && [ ! -L "$path" ]; then
         ln -s "$packaged" "$path"
-        echo "wkhtmltox: moved shadowing $path to $backup and linked $path to $packaged" >&2
+        echo "wkhtmltox: linked $path to $packaged" >&2
     fi
 done
 
@@ -391,7 +420,7 @@ for path in /usr/local/lib/libwkhtmltox.so*; do
     fi
 done
 if [ "$moved_libs" = true ]; then
-    echo "wkhtmltox: moved shadowing /usr/local/lib/libwkhtmltox.so* files to $backup_dir" >&2
+    echo "wkhtmltox: moved old /usr/local/lib/libwkhtmltox.so* files to $backup_dir" >&2
 fi
 
 if command -v ldconfig >/dev/null 2>&1; then
