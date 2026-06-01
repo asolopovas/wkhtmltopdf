@@ -71,9 +71,12 @@ bool ahsort(const ArgHandler * a, const ArgHandler * b) {
   \param doc Indicate to the outputter that it is writing documentation
 */
 void CommandLineParserBase::outputSwitches(Outputter * o, bool extended, bool doc) const {
-	foreach (const QString & section, sections) {
+	for (int sectionIndex = 0; sectionIndex < sections.size(); ++sectionIndex) {
+		const QString section = sections.at(sectionIndex);
 		QList<const ArgHandler *> display;
-		foreach (const ArgHandler * handler, sectionArgumentHandles[section]) {
+		const QList<ArgHandler *> handlers = sectionArgumentHandles[section];
+		for (int handlerIndex = 0; handlerIndex < handlers.size(); ++handlerIndex) {
+			const ArgHandler * handler = handlers.at(handlerIndex);
 #ifndef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 			if (!doc && handler->qthack) continue;
 #else
@@ -91,8 +94,8 @@ void CommandLineParserBase::outputSwitches(Outputter * o, bool extended, bool do
 			o->endParagraph();
 		}
 		o->beginSwitch();
-		foreach (const ArgHandler * handler, display)
-			o->cswitch(handler);
+		for (int handlerIndex = 0; handlerIndex < display.size(); ++handlerIndex)
+			o->cswitch(display.at(handlerIndex));
 		o->endSwitch();
 		o->endSection();
  	}
@@ -132,8 +135,11 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 	const QString app = appName();
 	QList<const ArgHandler *> handlers;
 	QSet<QString> seen;
-	foreach (const QString & section, sections) {
-		foreach (const ArgHandler * handler, sectionArgumentHandles[section]) {
+	for (int sectionIndex = 0; sectionIndex < sections.size(); ++sectionIndex) {
+		const QString section = sections.at(sectionIndex);
+		const QList<ArgHandler *> sectionHandlers = sectionArgumentHandles[section];
+		for (int handlerIndex = 0; handlerIndex < sectionHandlers.size(); ++handlerIndex) {
+			const ArgHandler * handler = sectionHandlers.at(handlerIndex);
 			if (!handler->display || seen.contains(handler->longName)) continue;
 			seen.insert(handler->longName);
 			handlers.push_back(handler);
@@ -143,7 +149,8 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 
 	if (shell == "bash") {
 		QStringList words;
-		foreach (const ArgHandler * handler, handlers) {
+		for (int handlerIndex = 0; handlerIndex < handlers.size(); ++handlerIndex) {
+			const ArgHandler * handler = handlers.at(handlerIndex);
 			words << "--" + handler->longName;
 			if (handler->shortSwitch != 0)
 				words << "-" + QString(QChar(handler->shortSwitch));
@@ -191,7 +198,8 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 			"_%s() {\n"
 			"  _arguments -s \\\n",
 			app.toLocal8Bit().constData(), app.toLocal8Bit().constData(), app.toLocal8Bit().constData());
-		foreach (const ArgHandler * handler, handlers) {
+		for (int handlerIndex = 0; handlerIndex < handlers.size(); ++handlerIndex) {
+			const ArgHandler * handler = handlers.at(handlerIndex);
 			QString desc = completionDescription(handler);
 			QString suffix = handler->argn.size() ? ":" + handler->argn[0] + ":_files" : "";
 			if (handler->longName == "completion")
@@ -224,7 +232,8 @@ bool CommandLineParserBase::outputCompletion(FILE * fd, const QString & shell) c
 			fprintf(fd, "complete -c %s -f -a cover -d 'PDF cover object'\n", app.toLocal8Bit().constData());
 			fprintf(fd, "complete -c %s -f -a toc -d 'PDF table of contents object'\n", app.toLocal8Bit().constData());
 		}
-		foreach (const ArgHandler * handler, handlers) {
+		for (int handlerIndex = 0; handlerIndex < handlers.size(); ++handlerIndex) {
+			const ArgHandler * handler = handlers.at(handlerIndex);
 			QString line = "complete -c " + app + " -l " + handler->longName;
 			if (handler->shortSwitch != 0)
 				line += " -s " + QString(QChar(handler->shortSwitch));

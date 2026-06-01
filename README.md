@@ -20,7 +20,7 @@ wkhtmltopdf --page-size Letter --orientation Landscape --margin-top 10mm page.ht
 wkhtmltopdf cover cover.html toc chapter1.html chapter2.html book.pdf
 ```
 
-For engine limits, security guidance, AVIF support, and alternatives, see [`docs/status.md`](docs/status.md).
+For engine limits, security guidance, and alternatives, see [`docs/status.md`](docs/status.md).
 
 ## Completion
 
@@ -41,8 +41,9 @@ Package scripts can use `--completion <bash|zsh|fish>`.
 
 ## Build
 
-Linux release packages in this fork use system Qt 5 so Qt image plugins such as AVIF can be bundled.
-The legacy patched-Qt packaging flow remains available for features that require wkhtmltopdf's Qt patches, but patched Qt 4 cannot use Qt 5 image plugins.
+Release packages in this fork are full-functionality patched-Qt builds. `wkhtmltopdf --version` must print `(with patched Qt)`, and `wkhtmltopdf --help` must not show a `Reduced Functionality` section.
+
+If a package install warns that `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, or `/usr/local/lib/libwkhtmltox.so*` exists, remove or rename that stale local install. Files in `/usr/local` can shadow the packaged `/usr/bin` wrappers and make an old unpatched binary appear to be the new release.
 
 ```sh
 make           # install/check deps, then configure + build

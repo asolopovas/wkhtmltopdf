@@ -41,5 +41,9 @@ TARGET=wkhtmltox
 INSTALLS += target
 
 DESTDIR = ../../bin
+unix|win32-g++ {
+    !exists($$DESTDIR): system(mkdir -p $$DESTDIR)
+    QMAKE_PRE_LINK += mkdir -p $$DESTDIR
+}
 !windows: target.path=$$INSTALLBASE/lib
 else:     target.path=$$INSTALLBASE/bin

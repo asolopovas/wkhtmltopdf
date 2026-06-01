@@ -19,18 +19,27 @@
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "outputter.hh"
+#include <QByteArray>
 #include <QTextDocument>
-
-#if QT_VERSION >= 0x050000
-#define S(x) x.toHtmlEscaped().toUtf8().constData()
-#else
-#define S(x) Qt::escape(x).toUtf8().constData()
-#endif
 
 class HtmlOutputter: public Outputter {
 private:
 	FILE * fd;
 	bool ordered;
+
+	QByteArray escapedUtf8(const QString & value) const {
+#if QT_VERSION >= 0x050000
+		return value.toHtmlEscaped().toUtf8();
+#else
+		return Qt::escape(value).toUtf8();
+#endif
+	}
+
+	void writeEscaped(const QString & value) {
+		QByteArray data = escapedUtf8(value);
+		fprintf(fd, "%s", data.constData());
+	}
+
 public:
 	HtmlOutputter(FILE * _): fd(_) {
 		fprintf(fd,
@@ -54,7 +63,9 @@ public:
 	}
 
 	void beginSection(const QString & name) {
-		fprintf(fd, "<a name=\"%s\"><h1>%s</h1></a>\n", S(name), S(name));
+		QByteArray anchor = escapedUtf8(name);
+		QByteArray title = escapedUtf8(name);
+		fprintf(fd, "<a name=\"%s\"><h1>%s</h1></a>\n", anchor.constData(), title.constData());
 	}
 
 	void endSection() {
@@ -69,27 +80,33 @@ public:
 	}
 
 	void text(const QString & t) {
-		fprintf(fd, "%s", S(t));
+		writeEscaped(t);
 	}
 
 	void sectionLink(const QString & s) {
-		fprintf(fd, "<a href=\"#%s\">%s</a>", S(s), S(s));
+		QByteArray anchor = escapedUtf8(s);
+		QByteArray label = escapedUtf8(s);
+		fprintf(fd, "<a href=\"#%s\">%s</a>", anchor.constData(), label.constData());
 	}
 
 	void bold(const QString & t) {
-		fprintf(fd, "<b>%s</b>", S(t));
+		QByteArray data = escapedUtf8(t);
+		fprintf(fd, "<b>%s</b>", data.constData());
 	}
 
 	void italic(const QString & t) {
-		fprintf(fd, "<i>%s</i>", S(t));
+		QByteArray data = escapedUtf8(t);
+		fprintf(fd, "<i>%s</i>", data.constData());
 	}
 
 	void link(const QString & t) {
-		fprintf(fd, "<a href=\"%s\">%s</a>", S(t),S(t));
+		QByteArray data = escapedUtf8(t);
+		fprintf(fd, "<a href=\"%s\">%s</a>", data.constData(), data.constData());
 	}
 
 	void verbatim(const QString & t) {
-		fprintf(fd, "<pre>%s</pre>", S(t));
+		QByteArray data = escapedUtf8(t);
+		fprintf(fd, "<pre>%s</pre>", data.constData());
 	}
 
 	void beginList(bool o) {
@@ -102,7 +119,8 @@ public:
 	}
 
 	void listItem(const QString & s) {
-		fprintf(fd, "<li>%s</li>\n", S(s));
+		QByteArray data = escapedUtf8(s);
+		fprintf(fd, "<li>%s</li>\n", data.constData());
 	}
 
 	void beginSwitch() {
@@ -110,14 +128,18 @@ public:
 	}
 
 	void cswitch(const ArgHandler * h) {
+		QByteArray longName = escapedUtf8(h->longName);
 		fprintf(fd, "<tr><td class=\"short\">");
 		if (h->shortSwitch)
 			fprintf(fd, "-%c,",h->shortSwitch);
-		fprintf(fd, "</td><td class=\"long\">--%s%s</td><td class=\"arg\">",S(h->longName),
+		fprintf(fd, "</td><td class=\"long\">--%s%s</td><td class=\"arg\">", longName.constData(),
 				(h->qthack?"<span style=\"font-weight: normal; font-size: 80%; color:red;\">*</span>":""));
-		foreach (const QString & arg, h->argn)
-			fprintf(fd, "&lt;%s&gt; ",S(arg));
-		fprintf(fd, "</td><td class=\"desc\">%s</td></tr>\n",S(h->getDesc()));
+		for (int i = 0; i < h->argn.size(); ++i) {
+			QByteArray argData = escapedUtf8(h->argn.at(i));
+			fprintf(fd, "&lt;%s&gt; ",argData.constData());
+		}
+		QByteArray desc = escapedUtf8(h->getDesc());
+		fprintf(fd, "</td><td class=\"desc\">%s</td></tr>\n",desc.constData());
 	}
 
 	void endSwitch() {

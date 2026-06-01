@@ -20,6 +20,10 @@ include(../../common.pri)
 TEMPLATE = app
 TARGET = wkhtmltopdf
 DESTDIR = ../../bin
+unix|win32-g++ {
+    !exists($$DESTDIR): system(mkdir -p $$DESTDIR)
+    QMAKE_PRE_LINK += mkdir -p $$DESTDIR
+}
 DEPENDPATH += . ../shared
 INCLUDEPATH += . ../shared
 

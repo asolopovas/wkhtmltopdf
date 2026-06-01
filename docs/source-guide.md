@@ -19,7 +19,7 @@ Maintainer map. Generated CLI/C API docs remain the closest reference for runtim
 
 ## Workflow
 
-Use the wrapper unless reproducing raw qmake behavior. The default wrapper build uses system Qt; current Linux release packages in this fork also use system Qt 5 so AVIF-capable image plugins can be bundled.
+Use the wrapper unless reproducing raw qmake behavior. Development builds may use system Qt for local checks, but release packages must use wkhtmltopdf patched Qt and must report `(with patched Qt)`.
 
 ```sh
 make           # install/check deps, then configure + build
@@ -56,7 +56,7 @@ make release BUMP=patch
 - Image settings/rendering: `src/lib/imagesettings.*`, `src/lib/imageconverter.*`.
 - Loading/security: `src/lib/loadsettings.*`, `src/lib/reflect.*`, `src/shared/commonarguments.cc`.
 
-System-Qt builds can use distro image plugins such as `qt5-avif-image-plugin`, but they may lack patched-Qt features: multiple inputs, headers/footers, outlines, TOC, smart-shrinking controls, and PDF links. Use the patched-Qt packaging flow only when those features matter more than Qt 5 plugin support.
+System-Qt builds are useful only for local development diagnostics. They lack patched-Qt features such as multiple inputs, headers/footers, outlines, TOC, smart-shrinking controls, PDF links, and reliable headless rendering. Do not publish release artifacts unless package validation proves `(with patched Qt)` and no `Reduced Functionality` help text.
 
 ## Change rules
 

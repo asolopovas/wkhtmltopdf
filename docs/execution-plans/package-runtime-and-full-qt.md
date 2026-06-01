@@ -25,6 +25,8 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - [x] Add package loader tests and wire them into release tests.
 - [x] Update CI workflows to block unpatched artifacts.
 - [x] Run closest local checks and record results.
+- [x] Fix CLI/man text output so patched builds print complete man-style help instead of truncated first-word paragraphs.
+- [x] Build replacement Linux `.deb` and Windows installer artifacts for 0.13.0.
 
 ## Decisions
 - Do not hide reduced functionality by changing help text; reject unpatched Qt at build/test time instead.
@@ -45,6 +47,13 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - Confirmed the installed broken package had poisoned the host loader cache (`ldconfig -p` showed `/opt/wkhtmltox/lib/liblzma.so.5` and `/opt/wkhtmltox/lib/libstdc++.so.6`); removed the stale `/etc/ld.so.conf.d/wkhtmltox.conf` locally and reran `ldconfig` so Debian tooling works again.
 - Tried full patched-Qt e2e builds through `wkhtmltopdf/packaging` (`buster-amd64`, `bullseye-amd64`, `bookworm-amd64`, `focal-amd64`). Buster is EOL in upstream Docker apt sources; bullseye had transient DNS/package-index failure; bookworm/focal reached Qt compilation but failed in Qt GUI generated UI code before producing a patched Qt toolchain. No reduced-functionality artifact was produced.
 - Full `.deb` install/render validation is now enforced by `tests/deb/deb-loader.sh` plus `tests/smoke/smoke.py`; it requires a package built with a patched Qt qmake.
+
+- 2026-06-01 follow-up: fixed text/html/man outputters to keep encoded strings alive and to avoid Qt4 `foreach` truncation in generated help. Regenerated `docs/usage/wkhtmltopdf.txt` from the patched installed binary.
+- 2026-06-01 follow-up: `docker run ... ubuntu:20.04 ... QMAKE=/tgt/qt/bin/qmake RELEASE_OUTPUT=artifacts RELEASE_SERIES=linux scripts/build-linux-deb.sh` produced `artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb`.
+- 2026-06-01 follow-up: `tests/deb/deb-loader.sh artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb` passed.
+- 2026-06-01 follow-up: `WKHTMLTOPDF_BINARY=/usr/bin/wkhtmltopdf WKHTMLTOIMAGE_BINARY=/usr/bin/wkhtmltoimage python3 tests/smoke/smoke.py` passed and now checks complete patched help markers.
+- 2026-06-01 follow-up: rebuilt the Windows MXE package from the patched Qt cache, then created `artifacts/windows-exe/wkhtmltox-0.13.0-1.windows-mxe-cross-win64-installer.exe` with NSIS.
+- 2026-06-01 follow-up: extracted the Windows installer with `7z` and verified `bin/wkhtmltopdf.exe` contains `0.13.0 (with patched Qt)` plus the new full patched-Qt description.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.

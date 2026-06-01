@@ -226,11 +226,22 @@ copy_msys2_runtime_deps
 cp "${REPO_DIR}/LICENSE" "${stage_dir}/LICENSE.txt"
 cp "${REPO_DIR}/README.md" "${stage_dir}/README.txt"
 
-(
-    cd "${stage_dir}/bin"
-    ./wkhtmltopdf.exe --version
-    ./wkhtmltoimage.exe --version
-)
+validate_full_functionality_binaries() {
+    local tool version_output help_output
+    for tool in wkhtmltopdf wkhtmltoimage; do
+        version_output="$("${stage_dir}/bin/${tool}.exe" --version 2>&1)"
+        grep -Fq "${release_version} (with patched Qt)" <<<"${version_output}" || {
+            echo "${tool}.exe is not a full patched-Qt ${release_version} build: ${version_output}" >&2
+            exit 1
+        }
+    done
+    help_output="$("${stage_dir}/bin/wkhtmltopdf.exe" --extended-help 2>&1)"
+    if grep -Eq 'Reduced Functionality|not using wkhtmltopdf patched Qt' <<<"${help_output}"; then
+        echo "wkhtmltopdf.exe help reports reduced functionality" >&2
+        exit 1
+    fi
+}
+validate_full_functionality_binaries
 
 installer="${release_output}/windows-exe/wkhtmltox-${release_version}-1.windows-ucrt64-installer.exe"
 source_dir_win="$(cygpath -w "${stage_dir}")"

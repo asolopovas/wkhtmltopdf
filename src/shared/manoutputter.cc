@@ -19,20 +19,35 @@
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "outputter.hh"
+#include <QByteArray>
 #include <QStringList>
-#define S(x) ((x).toUtf8().constData())
 
 class ManOutputter: public Outputter {
 private:
 	FILE * fd;
 	int order;
+
+	QByteArray utf8(const QString & value) const {
+		return value.toUtf8();
+	}
+
+	void writeString(const QString & value) {
+		QByteArray data = utf8(value);
+		fprintf(fd, "%s", data.constData());
+	}
+
+	QString escaped(const QString & value) const {
+		return QString(value).replace("-", "\\-");
+	}
+
 public:
 	ManOutputter(FILE * _): fd(_) {
 		fprintf(fd,".TH WKHTMLTOPDF 1 \"2009 February 23\"\n\n");
 	}
 
 	void beginSection(const QString & name) {
-		fprintf(fd, ".SH %s\n", S(name));
+		QByteArray title = utf8(name.toUpper());
+		fprintf(fd, ".SH %s\n", title.constData());
 	}
 
 	void endSection() {
@@ -47,8 +62,7 @@ public:
 	}
 
 	void text(const QString & t) {
-		QString str = QString(t).replace("-", "\\-");
-		fprintf(fd, "%s", S(str));
+		writeString(escaped(t));
 	}
 
 	void sectionLink(const QString & t) {
@@ -56,23 +70,28 @@ public:
 	}
 
 	void bold(const QString & t) {
-		fprintf(fd, "\\fB%s\\fP", S(t));
+		QByteArray data = utf8(t);
+		fprintf(fd, "\\fB%s\\fP", data.constData());
 	}
 
 	void italic(const QString & t) {
-		fprintf(fd, "\\fB%s\\fP", S(t));
+		QByteArray data = utf8(t);
+		fprintf(fd, "\\fB%s\\fP", data.constData());
 	}
 
 	void link(const QString & t) {
-		fprintf(fd, "<%s>", S(t));
+		QByteArray data = utf8(t);
+		fprintf(fd, "<%s>", data.constData());
 	}
 
 	void verbatim(const QString & t) {
-		QString str = QString(t).replace("-", "\\-");
-		QStringList l = str.split('\n');
-		while ( l.back() == "") l.pop_back();
-		foreach (const QString & line, l)
-			fprintf(fd, "  %s\n", S(line));
+		QStringList l = escaped(t).split('\n');
+		while (!l.isEmpty() && l.back() == "") l.pop_back();
+		for (int i = 0; i < l.size(); ++i) {
+			fprintf(fd, "  ");
+			writeString(l.at(i));
+			fprintf(fd, "\n");
+		}
 		fprintf(fd, "\n");
 	}
 
@@ -91,7 +110,8 @@ public:
 	void listItem(const QString & s) {
 		if (order < 0) fprintf(fd, " * ");
 		else fprintf(fd, "%3d ", order++);
-		fprintf(fd,"%s\n",S(s));
+		writeString(s);
+		fprintf(fd,"\n");
 	}
 
 	void cswitch(const ArgHandler * h) {
@@ -101,12 +121,16 @@ public:
 			fprintf(fd, "\\-%c, ", h->shortSwitch);
 		else
 			fprintf(fd, "    ");
-		fprintf(fd,"\\-\\-%s\\fR", S(h->longName));
+		QByteArray longName = utf8(h->longName);
+		fprintf(fd,"\\-\\-%s\\fR", longName.constData());
 
-		for (QVector<QString>::const_iterator i = h->argn.constBegin(); i != h->argn.constEnd(); ++i)
-			fprintf(fd," \\fI<%s>\\fR", S(*i));
+		for (QVector<QString>::const_iterator i = h->argn.constBegin(); i != h->argn.constEnd(); ++i) {
+			QByteArray arg = utf8(*i);
+			fprintf(fd," \\fI<%s>\\fR", arg.constData());
+		}
 
-		fprintf(fd, "\n%s\n", S(QString(h->desc).replace("-", "\\-")));
+		QByteArray desc = utf8(escaped(h->desc));
+		fprintf(fd, "\n%s\n", desc.constData());
 	}
 
 	void endSwitch() {

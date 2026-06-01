@@ -4,7 +4,7 @@ layout: default
 
 # Downloads
 
-Release assets live in [wkhtmltopdf/packaging releases](https://github.com/wkhtmltopdf/packaging/releases). Current stable series: **0.12.6**; some Linux assets are **0.12.6.1** rebuilds.
+Release assets for this fork live in [asolopovas/wkhtmltopdf releases](https://github.com/asolopovas/wkhtmltopdf/releases). Current fork series: **0.13.0**.
 
 ## Pick an asset
 
@@ -12,7 +12,9 @@ Release assets live in [wkhtmltopdf/packaging releases](https://github.com/wkhtm
 2. If no exact patch release exists, try the same major/LTS release.
 3. If nothing fits, ask in [wkhtmltopdf/packaging](https://github.com/wkhtmltopdf/packaging).
 
-Legacy official packages use patched Qt. This fork's AVIF-capable Linux packages use system Qt 5 with bundled Qt image plugins, so they may differ from patched-Qt builds. Generic Linux binaries are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
+The 0.13.0 Linux `.deb` and Windows installer are built only with wkhtmltopdf patched Qt. Verify an install with `wkhtmltopdf --version`; it must include `(with patched Qt)`. If `wkhtmltopdf --help` reports `Reduced Functionality`, an old unpatched binary is being executed or a bad artifact was installed.
+
+Generic Linux tarballs are no longer shipped because libc, OpenSSL, image libraries, fonts, and fontconfig vary by distribution.
 
 ## Archive
 
@@ -33,3 +35,4 @@ Set `FONTCONFIG_PATH=/opt/fonts` in Lambda.
 
 - Read [Project status](status.html) and [AppArmor](apparmor.html) before processing risky HTML.
 - Symantec `WS.Reputation.1` is reputation-based; verify Windows downloads against GitHub release assets.
+- On Linux, `/usr/local/bin` appears before `/usr/bin` on many systems. Remove stale `/usr/local/bin/wkhtmltopdf` and `/usr/local/bin/wkhtmltoimage` files if they shadow the packaged release.

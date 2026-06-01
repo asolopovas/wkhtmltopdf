@@ -19,9 +19,8 @@
 // along with wkhtmltopdf.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "outputter.hh"
+#include <QByteArray>
 #include <qstringlist.h>
-
-#define S(t) (doc?(t).toUtf8().constData():(t).toLocal8Bit().constData())
 
 class TextOutputter: public Outputter {
 public:
@@ -34,18 +33,29 @@ public:
 	int order;
 	TextOutputter(FILE * _, bool d, bool e): fd(_), doc(d), extended(e) {}
 
+	QByteArray encoded(const QString & value) const {
+		return doc ? value.toUtf8() : value.toLocal8Bit();
+	}
+
+	void writeString(const QString & value) {
+		QByteArray data = encoded(value);
+		fprintf(fd, "%s", data.constData());
+	}
+
 	void beginSection(const QString & name) {
+		QString title = doc ? name : name.toUpper();
+		QByteArray titleData = encoded(title);
 		if (doc) {
-			int x= 80 - name.size() - 4;
+			int x= 80 - title.size() - 4;
 			if (x < 6) x = 60;
 			for (int i=0; i < x/2; ++i)
 				fprintf(fd, "=");
-			fprintf(fd, "> %s <", S(name) );
+			fprintf(fd, "> %s <", titleData.constData());
 			for (int i=0; i < (x+1)/2; ++i)
 				fprintf(fd, "=");
 			fprintf(fd, "\n");
 		} else
-			fprintf(fd, "%s:\n", S(name) );
+			fprintf(fd, "%s:\n", titleData.constData());
 	}
 
 	void endSection() {
@@ -62,9 +72,10 @@ public:
 	}
 
 	void text(const QString & t) {
-		first=true;
 		QStringList list = t.split(" ");
-		foreach (const QString & s, list) {
+		for (int i = 0; i < list.size(); ++i) {
+			const QString s = list.at(i);
+			if (s.isEmpty()) continue;
 			if ( w + s.size() + (first?0:1) > lw) {
 				fprintf(fd, "\n");
 				if (doc) {
@@ -81,7 +92,7 @@ public:
 				++w;
 			}
 			w += s.size();
-			fprintf(fd, "%s", S(s));
+			writeString(s);
 		}
 	}
 
@@ -106,11 +117,16 @@ public:
 	}
 
 	void verbatim(const QString & t) {
-		if (doc)
-			fprintf(fd,"%s\n", S(t));
-		else {
-			foreach (const QString & s, t.split("\n"))
-				fprintf(fd,"  %s\n",S(s));
+		if (doc) {
+			writeString(t);
+			fprintf(fd,"\n");
+		} else {
+			QStringList lines = t.split("\n");
+			for (int i = 0; i < lines.size(); ++i) {
+				fprintf(fd,"  ");
+				writeString(lines.at(i));
+				fprintf(fd,"\n");
+			}
 		}
 	}
 
@@ -123,7 +139,8 @@ public:
 	void listItem(const QString & s) {
 		if (order < 0) fprintf(fd, " * ");
 		else fprintf(fd, "%3d ", order++);
-		fprintf(fd,"%s\n",S(s));
+		writeString(s);
+		fprintf(fd,"\n");
 	}
 
 	void beginSwitch() {}
@@ -135,31 +152,39 @@ public:
 			fprintf(fd,"-%c, ",h->shortSwitch);
 		else
 			fprintf(fd,"    ");
-		fprintf(fd,"--%s",S(h->longName));
+		fprintf(fd,"--");
+		writeString(h->longName);
 		w+=4 + 2 + h->longName.size();
 		if (doc && h->qthack) {
 			fprintf(fd, " *");
 			w += 2;
 		}
 
-		foreach (const QString & arg, h->argn) {
-			fprintf(fd," <%s>",S(arg));
+		for (int i = 0; i < h->argn.size(); ++i) {
+			const QString arg = h->argn.at(i);
+			fprintf(fd," <");
+			writeString(arg);
+			fprintf(fd,">");
 			w+=3+arg.size();
 		}
 		while (w < 37) {
 			fprintf(fd," ");
 			++w;
 		}
-		foreach (const QString & s, h->getDesc().split(" ")) {
+		QStringList descWords = h->getDesc().split(" ");
+		for (int i = 0; i < descWords.size(); ++i) {
+			const QString s = descWords.at(i);
+			if (s.isEmpty()) continue;
 			if (w+1+s.size() > lw) {
-				printf("\n");
+				fprintf(fd, "\n");
 				w=0;
 				while (w < 37) {
 					fprintf(fd," ");
 					++w;
 				}
 			}
-			fprintf(fd, " %s", S(s));
+			fprintf(fd, " ");
+			writeString(s);
 			w += s.size() + 1;
 		}
 		fprintf(fd,"\n");
@@ -168,7 +193,7 @@ public:
 	void endSwitch() {
 		if (doc)
 			fprintf(fd, "\nItems marked * are only available using a patched Qt.\n");
-		printf("\n");
+		fprintf(fd, "\n");
 	}
 
 };

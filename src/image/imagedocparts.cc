@@ -51,7 +51,13 @@ void ImageCommandLineParser::outputSynopsis(Outputter * o) const {
 */
 void ImageCommandLineParser::outputDescripton(Outputter * o) const {
 	o->beginSection("Description");
-	o->paragraph("Convert HTML from a URL, local file or stdin into an image.");
+#ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
+	o->paragraph("Convert HTML from a URL, local file or stdin into an image. "
+				 "This is a full patched-Qt build.");
+#else
+	o->paragraph("Convert HTML from a URL, local file or stdin into an image. "
+				 "This build is not using wkhtmltopdf patched Qt.");
+#endif
 	o->endSection();
 }
 

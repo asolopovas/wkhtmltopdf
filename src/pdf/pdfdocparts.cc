@@ -61,15 +61,18 @@ void PdfCommandLineParser::outputSynopsis(Outputter * o) const {
 */
 void PdfCommandLineParser::outputDescripton(Outputter * o) const {
 	o->beginSection("Description");
-	o->beginParagraph();
-	o->text("Convert HTML from a URL, local file or stdin into a PDF document, ");
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
-	o->text("using wkhtmltopdf patched Qt.");
+	o->paragraph("Convert HTML from a URL, local file or stdin into a PDF document. "
+				 "This is a full patched-Qt build with headers, footers, outlines, "
+				 "tables of contents, links, multiple inputs, smart-shrinking controls "
+				 "and headless rendering enabled.");
 #else
+	o->beginParagraph();
+	o->text("Convert HTML from a URL, local file or stdin into a PDF document. This build is ");
 	o->bold("not");
-	o->text(" using wkhtmltopdf patched Qt.");
-#endif
+	o->text(" using wkhtmltopdf patched Qt, so PDF functionality is reduced.");
 	o->endParagraph();
+#endif
 	o->endSection();
 }
 

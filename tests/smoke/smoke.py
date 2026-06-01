@@ -117,6 +117,22 @@ def main() -> int:
         if marker in help_text:
             raise AssertionError(f"{wkhtmltopdf} reports reduced functionality marker: {marker}")
 
+    required_help_text = (
+        "NAME:",
+        "USAGE:",
+        "DESCRIPTION:",
+        "full patched-Qt build",
+        "headers, footers, outlines",
+        "GLOBAL OPTIONS:",
+        "PAGE OPTIONS:",
+        "--header-html",
+        "--footer-html",
+        "--outline",
+    )
+    for marker in required_help_text:
+        if marker not in help_text:
+            raise AssertionError(f"{wkhtmltopdf} help is incomplete; missing {marker!r}")
+
     simple = FIXTURES / "simple.html"
     styled = FIXTURES / "styled.html"
     selector = FIXTURES / "selector.html"
