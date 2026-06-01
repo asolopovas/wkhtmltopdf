@@ -365,25 +365,50 @@ conf=/etc/ld.so.conf.d/wkhtmltox.conf
 if [ -f "$conf" ] && grep -Fxq '/opt/wkhtmltox/lib' "$conf"; then
     rm -f "$conf"
 fi
+
+stamp=$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || echo now)
+for tool in wkhtmltopdf wkhtmltoimage; do
+    path=/usr/local/bin/$tool
+    packaged=/usr/bin/$tool
+    if [ -e "$path" ] || [ -L "$path" ]; then
+        if [ "$(readlink -f "$path" 2>/dev/null || true)" = "$packaged" ]; then
+            continue
+        fi
+        backup="$path.wkhtmltox-shadowed.$stamp"
+        mv "$path" "$backup"
+        ln -s "$packaged" "$path"
+        echo "wkhtmltox: moved shadowing $path to $backup and linked $path to $packaged" >&2
+    fi
+done
+
+backup_dir=/usr/local/lib/wkhtmltox-shadowed-$stamp
+moved_libs=false
+for path in /usr/local/lib/libwkhtmltox.so*; do
+    if [ -e "$path" ] || [ -L "$path" ]; then
+        mkdir -p "$backup_dir"
+        mv "$path" "$backup_dir/"
+        moved_libs=true
+    fi
+done
+if [ "$moved_libs" = true ]; then
+    echo "wkhtmltox: moved shadowing /usr/local/lib/libwkhtmltox.so* files to $backup_dir" >&2
+fi
+
 if command -v ldconfig >/dev/null 2>&1; then
     ldconfig
 fi
-for path in /usr/local/bin/wkhtmltopdf /usr/local/bin/wkhtmltoimage; do
-    if [ -e "$path" ]; then
-        echo "wkhtmltox: warning: $path exists and may shadow /usr/bin/$(basename "$path") in your PATH" >&2
-    fi
-done
-for path in /usr/local/lib/libwkhtmltox.so*; do
-    if [ -e "$path" ]; then
-        echo "wkhtmltox: warning: $path exists and may shadow the packaged libwkhtmltox" >&2
-    fi
-done
 EOF
 chmod 0755 "${package_root}/DEBIAN/postinst"
 
 cat > "${package_root}/DEBIAN/postrm" <<'EOF'
 #!/bin/sh
 set -e
+for tool in wkhtmltopdf wkhtmltoimage; do
+    path=/usr/local/bin/$tool
+    if [ -L "$path" ] && [ "$(readlink -f "$path" 2>/dev/null || true)" = "/usr/bin/$tool" ]; then
+        rm -f "$path"
+    fi
+done
 if command -v ldconfig >/dev/null 2>&1; then
     ldconfig
 fi

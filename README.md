@@ -43,7 +43,7 @@ Package scripts can use `--completion <bash|zsh|fish>`.
 
 Release packages in this fork are full-functionality patched-Qt builds. `wkhtmltopdf --version` must print `(with patched Qt)`, and `wkhtmltopdf --help` must not show a `Reduced Functionality` section.
 
-If a package install warns that `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, or `/usr/local/lib/libwkhtmltox.so*` exists, remove or rename that stale local install. Files in `/usr/local` can shadow the packaged `/usr/bin` wrappers and make an old unpatched binary appear to be the new release.
+During `.deb` installation, stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` files are moved aside because they can shadow the packaged `/usr/bin` wrappers and make an old unpatched binary appear to be the new release.
 
 ```sh
 make           # install/check deps, then configure + build

@@ -35,4 +35,4 @@ Set `FONTCONFIG_PATH=/opt/fonts` in Lambda.
 
 - Read [Project status](status.html) and [AppArmor](apparmor.html) before processing risky HTML.
 - Symantec `WS.Reputation.1` is reputation-based; verify Windows downloads against GitHub release assets.
-- On Linux, `/usr/local/bin` appears before `/usr/bin` on many systems. Remove stale `/usr/local/bin/wkhtmltopdf` and `/usr/local/bin/wkhtmltoimage` files if they shadow the packaged release.
+- On Linux, `/usr/local/bin` appears before `/usr/bin` on many systems. The `.deb` moves stale `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` files aside so the packaged release wins.

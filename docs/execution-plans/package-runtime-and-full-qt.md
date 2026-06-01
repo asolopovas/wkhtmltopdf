@@ -57,6 +57,11 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 follow-up: force-updated `0.13.0` and `latest` tags to commit `f0b8f49f`, uploaded replacement `.deb`, Windows installer, and checksum assets to both GitHub releases with `gh release upload --clobber`.
 - 2026-06-01 follow-up: downloaded the `latest` release `.deb`, extracted it, and verified direct `wkhtmltopdf.bin --version` plus clean man-style help with no reduced-functionality markers.
 - 2026-06-01 follow-up: downloaded the `latest` release Windows installer, verified checksum `c7ee26c39f95e5f61e0f46c48da1bf92cc42abd771e8cb947a383c701ec3f48f`, extracted it with `7z`, and verified `bin/wkhtmltopdf.exe` contains `(with patched Qt)` and the full patched-Qt description.
+- 2026-06-01 follow-up: downloaded `https://github.com/asolopovas/wkhtmltopdf/releases/download/latest/wkhtmltox_0.13.0-1.linux_amd64.deb` and confirmed the package payload was patched, but the default command still resolved to stale `/usr/local/bin` binaries.
+- 2026-06-01 follow-up: changed Linux postinst to move shadowing `/usr/local/bin/wkhtmltopdf`, `/usr/local/bin/wkhtmltoimage`, and `/usr/local/lib/libwkhtmltox.so*` aside, then link `/usr/local/bin` commands to `/usr/bin` wrappers.
+- 2026-06-01 follow-up: rebuilt the `.deb`, installed it over the stale-local environment, and verified plain `wkhtmltopdf --version` and `wkhtmltoimage --version` both report `(with patched Qt)`.
+- 2026-06-01 follow-up: `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py` passed using default PATH resolution through `/usr/local/bin` symlinks.
+- 2026-06-01 follow-up: `tests/deb/deb-loader.sh artifacts/linux-deb/wkhtmltox_0.13.0-1.linux_amd64.deb` passed for rebuilt artifact `90eec4104d125b069cfb594b3e075214150a1bba808940a989adc9689a625c5e`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.
