@@ -69,6 +69,9 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 follow-up: rebuilt the Windows MXE installer after Qt Network recompiled `qsslsocket_openssl.cpp` and `qhttpnetworkconnection.cpp`.
 - 2026-06-01 follow-up validation passed: `bash -n scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh`; `git diff --check`; `python3 -m py_compile tests/smoke/smoke.py`; `shellcheck scripts/build-linux-deb.sh scripts/build-windows-msys2.sh tests/deb/deb-loader.sh`; `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py`.
 - 2026-06-01 follow-up rebuilt artifact checksums: Linux `.deb` `acf128204c1937580720ebedd3b02935606f6feb9e7d7622e175e44a4f687113`; Windows installer `bd5533fdc97297a1557734181ae950f25a628330d4679a96b67d005b6993a12b`.
+- 2026-06-01 public release verification: downloaded both `latest` and `0.13.0` GitHub release `.deb` and Windows `.exe` assets; hashes matched (`acf128204c1937580720ebedd3b02935606f6feb9e7d7622e175e44a4f687113` for `.deb`, `bd5533fdc97297a1557734181ae950f25a628330d4679a96b67d005b6993a12b` for `.exe`) and `latest`/`0.13.0` assets were byte-identical.
+- 2026-06-01 public release verification: installed downloaded `latest.deb`; plain `wkhtmltopdf --version` and `wkhtmltoimage --version` report `0.13.0 (with patched Qt)`, `wkhtmltopdf https://3oak.co.uk /tmp/wkhtmltox-public-verify/3oak-public.pdf` exited 0 and produced a 5-page PDF, and `WKHTMLTOPDF_BINARY=wkhtmltopdf WKHTMLTOIMAGE_BINARY=wkhtmltoimage python3 tests/smoke/smoke.py` passed.
+- 2026-06-01 public release verification: extracted downloaded `latest.exe` with `7z` and verified `bin/wkhtmltopdf.exe` contains `0.13.0 (with patched Qt)`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.
