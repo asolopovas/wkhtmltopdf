@@ -2,6 +2,7 @@
 build/
 build-windows-msys2/
 package/
+tmp/
 *.plist
 *~
 \#*\#

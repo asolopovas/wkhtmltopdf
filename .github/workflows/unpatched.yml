@@ -11,12 +11,12 @@ concurrency:
 
 jobs:
   qt4:
-    name: Qt 4.8 on Linux
+    name: Reject unpatched Qt 4.8 on Linux
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
-      - name: build in legacy Qt 4 container
+      - name: verify unpatched Qt 4 builds are rejected
         run: |
           docker run --rm \
             --volume "$PWD:/work" \
@@ -26,16 +26,20 @@ jobs:
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends make
               make install-dev QT=4
-              make build QT=4
+              if make build QT=4 2>&1 | tee /tmp/unpatched.log; then
+                echo "unpatched Qt 4 build unexpectedly succeeded" >&2
+                exit 1
+              fi
+              grep -F "require wkhtmltopdf patched Qt" /tmp/unpatched.log
             '
 
   qt5:
-    name: Qt 5.12 on Linux
+    name: Reject unpatched Qt 5 on Linux
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
-      - name: build in Qt 5 container
+      - name: verify unpatched Qt 5 builds are rejected
         run: |
           docker run --rm \
             --volume "$PWD:/work" \
@@ -45,5 +49,9 @@ jobs:
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends make
               make install-dev QT=5
-              make test QT=5
+              if make build QT=5 2>&1 | tee /tmp/unpatched.log; then
+                echo "unpatched Qt 5 build unexpectedly succeeded" >&2
+                exit 1
+              fi
+              grep -F "require wkhtmltopdf patched Qt" /tmp/unpatched.log
             '

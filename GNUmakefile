@@ -222,8 +222,10 @@ release-build-windows-exe: ensure-packaging
 release-test-linux-deb:
 	@package="$$(ls -1 "$(RELEASE_OUTPUT)"/linux-deb/*.deb | head -n1)"; \
 	[ -n "$$package" ] || { echo "release-test: no deb package in $(RELEASE_OUTPUT)/linux-deb" >&2; exit 1; }; \
-	sudo apt-get update; \
-	sudo apt-get install -y "$$package"; \
+	system_ld_library_path="/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/lib:/usr/lib"; \
+	sudo env LD_LIBRARY_PATH="$$system_ld_library_path" apt-get update; \
+	sudo env LD_LIBRARY_PATH="$$system_ld_library_path" apt-get install -y --no-install-recommends binutils file libc-bin; \
+	tests/deb/deb-loader.sh "$$package"; \
 	WKHTMLTOPDF_BINARY=/usr/bin/wkhtmltopdf \
 	WKHTMLTOIMAGE_BINARY=/usr/bin/wkhtmltoimage \
 	$(PYTHON) tests/smoke/smoke.py

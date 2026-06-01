@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
+          submodules: true
       - name: build general Linux deb package with AVIF plugin
         run: |
           docker run --rm -v "$PWD:/src" -w /src ubuntu:24.04 bash -lc '
@@ -47,16 +48,26 @@ jobs:
               libqt5svg5-dev \
               libqt5webkit5-dev \
               libqt5xmlpatterns5-dev \
+              patchelf \
               qt5-avif-image-plugin \
               qt5-qmake \
               qtbase5-dev \
               qttools5-dev-tools
             RELEASE_OUTPUT=artifacts RELEASE_SERIES=linux MAKE_JOBS=$(nproc) scripts/build-linux-deb.sh
-            chown -R --reference=/src artifacts
+            chown -R --reference=/src artifacts tmp/logs 2>/dev/null || true
           '
-      - name: install and smoke-test deb package
+      - name: upload Linux build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-build-logs
+          path: tmp/logs/**/*.log
+          if-no-files-found: ignore
+      - name: install and test deb package
         run: |
-          sudo dpkg -i ./artifacts/linux-deb/*.deb
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends binutils file libc-bin
+          tests/deb/deb-loader.sh ./artifacts/linux-deb/*.deb
           python3 tests/smoke/smoke.py
         env:
           RELEASE_OUTPUT: artifacts
@@ -81,6 +92,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
+          submodules: true
       - name: setup MSYS2 with stable Qt 5 packages
         uses: msys2/setup-msys2@v2
         with:
@@ -103,6 +115,13 @@ jobs:
       - name: build Windows setup installer
         shell: msys2 {0}
         run: scripts/build-windows-msys2.sh
+      - name: upload Windows build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-build-logs
+          path: tmp/logs/**/*.log
+          if-no-files-found: ignore
       - name: install and smoke-test setup installer
         shell: powershell
         run: |

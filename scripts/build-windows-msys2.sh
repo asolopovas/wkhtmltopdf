@@ -11,6 +11,14 @@ case "${release_output}" in
     /*) ;;
     *) release_output="${REPO_DIR}/${release_output}" ;;
 esac
+log_root="${WKHTMLTOX_LOG_DIR:-${REPO_DIR}/tmp/logs}"
+mkdir -p "${log_root}"
+log_file="${log_root}/build-windows-msys2-$(date -u +%Y%m%dT%H%M%SZ)-$$.log"
+touch "${log_file}"
+echo "build-windows-msys2: logging to ${log_file}"
+exec > >(tee -a "${log_file}") 2>&1
+echo "build-windows-msys2: logging to ${log_file}"
+
 qmake_bin="${QMAKE:-}"
 if [[ -z "${qmake_bin}" ]]; then
     for candidate in qmake qmake-qt5 qmake.exe qmake-qt5.exe /ucrt64/bin/qmake-qt5.exe /mingw64/bin/qmake-qt5.exe; do
@@ -21,9 +29,33 @@ if [[ -z "${qmake_bin}" ]]; then
     done
 fi
 if [[ -z "${qmake_bin}" ]]; then
-    echo "qmake not found; install the MSYS2 Qt 5 base package" >&2
+    echo "qmake not found; install a wkhtmltopdf patched Qt toolchain" >&2
     exit 127
 fi
+
+require_patched_qt() {
+    local qt_headers qt_version header found=false
+    qt_headers="$(${qmake_bin} -query QT_INSTALL_HEADERS 2>/dev/null || true)"
+    qt_version="$(${qmake_bin} -query QT_VERSION 2>/dev/null || true)"
+    for header in \
+        "${qt_headers}/QtWebKit/qwebframe.h" \
+        "${qt_headers}/qwebframe.h"; do
+        if [[ -f "${header}" ]] && grep -q '__EXTENSIVE_WKHTMLTOPDF_QT_HACK__' "${header}"; then
+            found=true
+            break
+        fi
+    done
+    if [[ "${found}" != true ]]; then
+        cat >&2 <<EOF
+ERROR: ${qmake_bin} points to Qt ${qt_version:-unknown} without the wkhtmltopdf Qt patches.
+Release installers must be full-functionality builds; refusing to create a reduced-functionality Windows package.
+Use QMAKE=/path/to/patched-qt/bin/qmake from the wkhtmltopdf patched Qt 4.8 tree.
+EOF
+        exit 2
+    fi
+}
+
+require_patched_qt
 
 makensis_bin="${MAKENSIS:-}"
 if [[ -z "${makensis_bin}" ]]; then
@@ -155,7 +187,8 @@ copy_msys2_runtime_deps() {
     while [[ "${copied_any}" == true ]]; do
         copied_any=false
         while IFS= read -r dependency; do
-            local target="${stage_dir}/bin/$(basename "${dependency}")"
+            local target
+            target="${stage_dir}/bin/$(basename "${dependency}")"
             if [[ ! -e "${target}" ]]; then
                 cp "${dependency}" "${target}"
                 copied_any=true

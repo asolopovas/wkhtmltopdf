@@ -100,7 +100,22 @@ def main() -> int:
         if not exe.exists():
             raise FileNotFoundError(f"missing binary: {exe}")
         version = run([exe, "--version"], env)
-        print(version.stdout.decode(errors="replace").strip())
+        version_text = version.stdout.decode(errors="replace").strip()
+        print(version_text)
+        if "0.13.0" not in version_text:
+            raise AssertionError(f"{exe} is not version 0.13.0: {version_text!r}")
+        if "(with patched Qt)" not in version_text:
+            raise AssertionError(f"{exe} is not a full patched-Qt build: {version_text!r}")
+
+    help_result = run([wkhtmltopdf, "--extended-help"], env)
+    help_text = (
+        help_result.stdout.decode(errors="replace")
+        + help_result.stderr.decode(errors="replace")
+    )
+    reduced_markers = ("Reduced Functionality", "not using wkhtmltopdf patched Qt")
+    for marker in reduced_markers:
+        if marker in help_text:
+            raise AssertionError(f"{wkhtmltopdf} reports reduced functionality marker: {marker}")
 
     simple = FIXTURES / "simple.html"
     styled = FIXTURES / "styled.html"
