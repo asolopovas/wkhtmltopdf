@@ -9,11 +9,19 @@
 QMAKE_MAKEFILE ?= Makefile
 BUILD_DIR ?= build
 BUILD_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
-QMAKE ?= $(shell command -v qmake-qt4 2>/dev/null || command -v qmake 2>/dev/null)
-QMAKE_CONFIG ?= CONFIG+=silent
 QT ?= 5
+ifeq ($(QT),4)
+QMAKE ?= $(shell command -v qmake-qt4 2>/dev/null || command -v qmake 2>/dev/null)
+else
+QMAKE ?= $(shell command -v qmake 2>/dev/null)
+endif
+QMAKE_CONFIG ?= CONFIG+=silent
+PROJECT_FILE ?= $(abspath wkhtmltopdf.pro)
 DRY_RUN ?=
 PYTHON ?= python3
+SMOKE_TEST ?= tests/smoke/smoke.py
+WKHTMLTOPDF_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltopdf)
+WKHTMLTOIMAGE_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltoimage)
 PACKAGING_REPO ?= https://github.com/wkhtmltopdf/packaging.git
 PACKAGING_DIR ?= ../packaging
 RELEASE_VERSION ?= $(shell tr -d '[:space:]' < VERSION | sed 's/-.*//')
@@ -35,7 +43,7 @@ PUSH ?= true
 UPLOAD ?= false
 
 
-.PHONY: all install clean distclean help install-dev configure build shadow-build release release-patch release-minor release-major release-build release-build-all release-test release-test-all release-build-linux-deb release-build-windows-exe release-test-linux-deb release-test-windows-exe ensure-packaging
+.PHONY: all install clean distclean help install-dev configure build shadow-build test check smoke e2e release release-patch release-minor release-major release-build release-build-all release-test release-test-all release-build-linux-deb release-build-windows-exe release-test-linux-deb release-test-windows-exe ensure-packaging
 
 all install clean distclean:
 	+@if [ -f "$(QMAKE_MAKEFILE)" ]; then \
@@ -56,10 +64,15 @@ configure:
 		exit 127; \
 	fi
 	mkdir -p "$(BUILD_DIR)"
-	cd "$(BUILD_DIR)" && "$(QMAKE)" ../wkhtmltopdf.pro $(QMAKE_CONFIG)
+	cd "$(BUILD_DIR)" && "$(QMAKE)" "$(PROJECT_FILE)" $(QMAKE_CONFIG)
 
 build shadow-build: configure
 	$(MAKE) -C "$(BUILD_DIR)" -j"$(BUILD_JOBS)"
+
+test check smoke e2e: build
+	WKHTMLTOPDF_BINARY="$(WKHTMLTOPDF_BINARY)" \
+	WKHTMLTOIMAGE_BINARY="$(WKHTMLTOIMAGE_BINARY)" \
+	$(PYTHON) "$(SMOKE_TEST)"
 
 release:
 	@args="$(RELEASE_ARGS)"; \
@@ -133,6 +146,8 @@ help:
 	@echo "  make install-dev QT=4      Install legacy Qt 4 build dependencies"
 	@echo "  make install-dev DRY_RUN=1 Print the package install command only"
 	@echo "  make build                 Configure/build in BUILD_DIR=$(BUILD_DIR) with BUILD_JOBS=$(BUILD_JOBS)"
+	@echo "  make test                  Build and run smoke tests against local binaries"
+	@echo "  make smoke                 Alias for make test (also: check, e2e)"
 	@echo "  make release VERSION_OVERRIDE=0.13.0"
 	@echo "  make release BUMP=patch    Create release commit/tag and build packages"
 	@echo "  make release-build         Build host release package into RELEASE_OUTPUT=$(RELEASE_OUTPUT)"

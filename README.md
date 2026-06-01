@@ -48,6 +48,7 @@ Local unpatched build (uses all available CPU threads by default, equivalent to 
 ```sh
 make install-dev
 make build
+make test
 ```
 
 Manual qmake build:

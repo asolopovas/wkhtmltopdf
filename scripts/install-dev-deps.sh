@@ -9,8 +9,8 @@ usage() {
 	cat <<USAGE
 Usage: $script_name [--qt 4|5] [--dry-run]
 
-Install development packages needed for local unpatched wkhtmltopdf builds on
-Debian/Ubuntu systems.
+Install development packages needed for local unpatched wkhtmltopdf builds and
+smoke tests on Debian/Ubuntu systems.
 
 Options:
   --qt 5       Install Qt 5 build dependencies (default, matches CI qt5 job)
@@ -82,6 +82,7 @@ fi
 packages=(
 	build-essential
 	ca-certificates
+	python3
 )
 
 case "$qt_version" in
@@ -104,9 +105,15 @@ esac
 if ((dry_run)); then
 	printf 'Would run:\n'
 	print_command "${apt_runner[@]}" update
+	print_command "${apt_install_runner[@]}" install -y --no-remove --fix-broken
 	print_command "${apt_install_runner[@]}" install -y --no-install-recommends "${packages[@]}"
 	exit 0
 fi
 
 "${apt_runner[@]}" update
+# A previously installed local wkhtmltox package may leave apt in a broken
+# state until its runtime dependencies are installed. Heal dependency-only
+# breakage first so installing already-present development packages still works;
+# --no-remove prevents apt from silently removing local packages to proceed.
+"${apt_install_runner[@]}" install -y --no-remove --fix-broken
 "${apt_install_runner[@]}" install -y --no-install-recommends "${packages[@]}"
