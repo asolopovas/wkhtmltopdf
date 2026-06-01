@@ -150,6 +150,27 @@ windeployqt_args=(--release --compiler-runtime)
 "${windeployqt_bin}" "${windeployqt_args[@]}" "${stage_dir}/bin/wkhtmltopdf.exe"
 "${windeployqt_bin}" "${windeployqt_args[@]}" "${stage_dir}/bin/wkhtmltoimage.exe"
 
+copy_msys2_runtime_deps() {
+    local copied_any=true
+    while [[ "${copied_any}" == true ]]; do
+        copied_any=false
+        while IFS= read -r dependency; do
+            local target="${stage_dir}/bin/$(basename "${dependency}")"
+            if [[ ! -e "${target}" ]]; then
+                cp "${dependency}" "${target}"
+                copied_any=true
+            fi
+        done < <(
+            find "${stage_dir}/bin" -type f \( -name '*.exe' -o -name '*.dll' \) -print0 |
+                xargs -0 -r ldd 2>/dev/null |
+                awk '/=> \/ucrt64\/bin\// { print $3 } /^\/ucrt64\/bin\// { print $1 }' |
+                sort -u
+        )
+    done
+}
+
+copy_msys2_runtime_deps
+
 cp "${REPO_DIR}/LICENSE" "${stage_dir}/LICENSE.txt"
 cp "${REPO_DIR}/README.md" "${stage_dir}/README.txt"
 
