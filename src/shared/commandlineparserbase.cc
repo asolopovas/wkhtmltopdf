@@ -28,18 +28,38 @@
 #include <qstringlist.h>
 #include <qwebframe.h>
 
+struct SortPrefix {
+	const char * text;
+	int length;
+};
+
+static QString strippedSortName(const QString & name) {
+	static const SortPrefix prefixes[] = {
+		{"no-", 3},
+		{"enable-", 7},
+		{"disable-", 8},
+		{"include-in-", 11},
+		{"exclude-from-", 13}
+	};
+	for (unsigned int i=0; i < sizeof(prefixes) / sizeof(prefixes[0]); ++i) {
+		if (name.startsWith(QLatin1String(prefixes[i].text)))
+			return name.mid(prefixes[i].length);
+	}
+	return name;
+}
+
+static QString noLastSortName(const QString & name) {
+	if (name.startsWith(QLatin1String("no-")))
+		return QLatin1String("zzzz") + name.mid(3);
+	return name;
+}
+
 bool ahsort(const ArgHandler * a, const ArgHandler * b) {
-	QRegExp e("^(no|enable|disable|include-in|exclude-from)-");
-	QString x=a->longName;
-	QString y=b->longName;
-	x.remove(e);
-	y.remove(e);
+	QString x = strippedSortName(a->longName);
+	QString y = strippedSortName(b->longName);
 	if (x == y) {
-		QRegExp e("^no-");
-		x=a->longName;
-		y=b->longName;
-		x.replace(e,"zzzz");
-		y.replace(e,"zzzz");
+		x = noLastSortName(a->longName);
+		y = noLastSortName(b->longName);
 	}
 	return x < y;
 }

@@ -25,7 +25,6 @@
 
 #include "pdfsettings.hh"
 #include "reflect.hh"
-#include <QMap>
 #include <stdexcept>
 
 #include "dllbegin.inc"
@@ -175,40 +174,45 @@ struct DLL_LOCAL ReflectImpl<PdfObject>: public ReflectClass {
   \file settings.hh
   \brief Defines the Settings class
 */
-DLL_LOCAL QMap<QString, QPrinter::PageSize> pageSizeMap() {
-	QMap<QString, QPrinter::PageSize> res;
-	res["A0"] = QPrinter::A0;
-	res["A1"] = QPrinter::A1;
-	res["A2"] = QPrinter::A2;
-	res["A3"] = QPrinter::A3;
-	res["A4"] = QPrinter::A4;
-	res["A5"] = QPrinter::A5;
-	res["A6"] = QPrinter::A6;
-	res["A7"] = QPrinter::A7;
-	res["A8"] = QPrinter::A8;
-	res["A9"] = QPrinter::A9;
-	res["B0"] = QPrinter::B0;
-	res["B1"] = QPrinter::B1;
-	res["B10"] = QPrinter::B10;
-	res["B2"] = QPrinter::B2;
-	res["B3"] = QPrinter::B3;
-	res["B4"] = QPrinter::B4;
-	res["B5"] = QPrinter::B5;
-	res["B6"] = QPrinter::B6;
-	res["B7"] = QPrinter::B7;
-	res["B8"] = QPrinter::B8;
-	res["B9"] = QPrinter::B9;
-	res["C5E"] = QPrinter::C5E;
-	res["Comm10E"] = QPrinter::Comm10E;
-	res["DLE"] = QPrinter::DLE;
-	res["Executive"] = QPrinter::Executive;
-	res["Folio"] = QPrinter::Folio;
-	res["Ledger"] = QPrinter::Ledger;
-	res["Legal"] = QPrinter::Legal;
-	res["Letter"] = QPrinter::Letter;
-	res["Tabloid"] = QPrinter::Tabloid;
-	return res;
-}
+struct DLL_LOCAL PageSizeEntry {
+	const char * name;
+	QPrinter::PageSize size;
+};
+
+static const PageSizeEntry pageSizes[] = {
+	{"A0", QPrinter::A0},
+	{"A1", QPrinter::A1},
+	{"A2", QPrinter::A2},
+	{"A3", QPrinter::A3},
+	{"A4", QPrinter::A4},
+	{"A5", QPrinter::A5},
+	{"A6", QPrinter::A6},
+	{"A7", QPrinter::A7},
+	{"A8", QPrinter::A8},
+	{"A9", QPrinter::A9},
+	{"B0", QPrinter::B0},
+	{"B1", QPrinter::B1},
+	{"B10", QPrinter::B10},
+	{"B2", QPrinter::B2},
+	{"B3", QPrinter::B3},
+	{"B4", QPrinter::B4},
+	{"B5", QPrinter::B5},
+	{"B6", QPrinter::B6},
+	{"B7", QPrinter::B7},
+	{"B8", QPrinter::B8},
+	{"B9", QPrinter::B9},
+	{"C5E", QPrinter::C5E},
+	{"Comm10E", QPrinter::Comm10E},
+	{"DLE", QPrinter::DLE},
+	{"Executive", QPrinter::Executive},
+	{"Folio", QPrinter::Folio},
+	{"Ledger", QPrinter::Ledger},
+	{"Legal", QPrinter::Legal},
+	{"Letter", QPrinter::Letter},
+	{"Tabloid", QPrinter::Tabloid}
+};
+
+static const int pageSizesCount = sizeof(pageSizes) / sizeof(pageSizes[0]);
 
 /*!
   Convert a string to a paper size, basically all thinkable values are allowed.
@@ -217,20 +221,20 @@ DLL_LOCAL QMap<QString, QPrinter::PageSize> pageSizeMap() {
   \param ok If supplied indicates if the conversion was successful
 */
 QPrinter::PageSize strToPageSize(const char * s, bool * ok) {
-	QMap<QString,QPrinter::PageSize> map = pageSizeMap();
-	for (QMap<QString,QPrinter::PageSize>::const_iterator i=map.begin(); i != map.end(); ++i) {
-		if (i.key().compare(s, Qt::CaseInsensitive) != 0) continue;
-		if (ok) *ok=true;
-		return i.value();
+	if (s) {
+		for (int i=0; i < pageSizesCount; ++i) {
+			if (strcasecmp(pageSizes[i].name, s) != 0) continue;
+			if (ok) *ok=true;
+			return pageSizes[i].size;
+		}
 	}
 	if (ok) *ok = false;
 	return QPrinter::A4;
 }
 
 QString pageSizeToStr(QPrinter::PageSize ps) {
-	QMap<QString,QPrinter::PageSize> map = pageSizeMap();
-	for (QMap<QString,QPrinter::PageSize>::const_iterator i=map.begin(); i != map.end(); ++i) {
-		if (i.value() == ps) return i.key();
+	for (int i=0; i < pageSizesCount; ++i) {
+		if (pageSizes[i].size == ps) return pageSizes[i].name;
 	}
 	return "";
 }

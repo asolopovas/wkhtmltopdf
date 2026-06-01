@@ -33,6 +33,7 @@
 #include <QPainter>
 #include <QPrinter>
 #include <QRegExp>
+#include <QSet>
 #include <QWaitCondition>
 #include <QWebPage>
 #include <qnetworkreply.h>
@@ -55,6 +56,8 @@ public:
 
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 	QHash<QString, QWebElement> anchors;
+	QHash<QString, QWebElement> resolvedLocalLinks;
+	QSet<QString> unresolvedLocalLinks;
 	QVector< QPair<QWebElement,QString> > localLinks;
 	QVector< QPair<QWebElement,QString> > externalLinks;
     // height length to reserve for header when printing page
@@ -82,6 +85,8 @@ public:
 	void clear() {
 #ifdef __EXTENSIVE_WKHTMLTOPDF_QT_HACK__
 		anchors.clear();
+		resolvedLocalLinks.clear();
+		unresolvedLocalLinks.clear();
 		localLinks.clear();
 		externalLinks.clear();
 		if (web_printer != 0)
@@ -143,10 +148,10 @@ private:
 	int objectPage;
 
 
-	QHash<int, QHash<QString, QWebElement> > pageAnchors;
-	QHash<int, QVector< QPair<QWebElement,QString> > > pageLocalLinks;
-	QHash<int, QVector< QPair<QWebElement,QString> > > pageExternalLinks;
-	QHash<int, QVector<QWebElement> > pageFormElements;
+	QHash<int, QHash<QString, QRectF> > pageAnchors;
+	QHash<int, QVector< QPair<QRectF,QString> > > pageLocalLinks;
+	QHash<int, QVector< QPair<QRectF,QString> > > pageExternalLinks;
+	QHash<int, QVector< QPair<QWebElement,QRectF> > > pageFormElements;
 	bool pageHasHeaderFooter;
 
     // loader for measuringHeader and measuringFooter

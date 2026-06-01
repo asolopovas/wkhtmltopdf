@@ -224,7 +224,7 @@ void ImageConverterPrivate::pagesLoaded(bool ok) {
 		pal.setBrush(QPalette::Base, Qt::transparent);
 		loaderObject->page.setPalette(pal);
 	} else {
-		painter.fillRect(QRect(QPoint(0,0),loaderObject->page.viewportSize()), Qt::white);
+		painter.fillRect(QRect(QPoint(0,0), rect.size()), Qt::white);
 	}
 	painter.translate(-rect.left(), -rect.top());
 	frame->render(&painter);

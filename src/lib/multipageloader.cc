@@ -510,6 +510,17 @@ void ResourceObject::sslErrors(QNetworkReply *reply, const QList<QSslError> &) {
 	warning("SSL error ignored");
 }
 
+static bool appendFileData(QFile &file, QByteArray &data) {
+	QByteArray buffer(1024 * 1024, 0);
+	while (true) {
+		qint64 read = file.read(buffer.data(), buffer.size());
+		if (read < 0) return false;
+		if (read == 0) break;
+		data.append(buffer.constData(), static_cast<int>(read));
+	}
+	return true;
+}
+
 void ResourceObject::load() {
 	finished=false;
 	++multiPageLoader.loading;
@@ -520,23 +531,28 @@ void ResourceObject::load() {
 	QString boundary;
 	if (hasFiles) {
 		boundary = QUuid::createUuid().toString().remove('-').remove('{').remove('}');
+		const QByteArray boundaryBytes = boundary.toUtf8();
 		foreach (const settings::PostItem & pi, settings.post) {
 			//TODO escape values here
 			postData.append("--");
-			postData.append(boundary.toUtf8());
+			postData.append(boundaryBytes);
 			postData.append("\ncontent-disposition: form-data; name=\"");
 			postData.append(pi.name.toUtf8());
 			postData.append('\"');
 			if (pi.file) {
 				QFile f(pi.value);
-				if (!f.open(QIODevice::ReadOnly) ) {
+				bool fileOpen = f.open(QIODevice::ReadOnly);
+				if (!fileOpen) {
 					error(QString("Unable to open file ")+pi.value);
 					multiPageLoader.fail();
 				}
 				postData.append("; filename=\"");
 				postData.append( QFileInfo(pi.value).fileName().toUtf8());
 				postData.append("\"\n\n");
-				postData.append( f.readAll() );
+				if (fileOpen && !appendFileData(f, postData)) {
+					error(QString("Unable to read file ")+pi.value);
+					multiPageLoader.fail();
+				}
 				//TODO ADD MIME TYPE
 			} else {
 				postData.append("\n\n");
@@ -546,7 +562,7 @@ void ResourceObject::load() {
 		}
 		if (!postData.isEmpty()) {
 			postData.append("--");
-			postData.append(boundary.toUtf8());
+			postData.append(boundaryBytes);
 			postData.append("--\n");
 		}
 	} else {
@@ -633,16 +649,19 @@ void MultiPageLoaderPrivate::loadDone() {
  * \param dst The destination to copy to
  */
 bool MultiPageLoader::copyFile(QFile & src, QFile & dst) {
-//      TODO enable again when
-//      http://bugreports.qt.nokia.com/browse/QTBUG-6894
-//      is fixed
-//      QByteArray buf(1024*1024*5,0);
-//      while ( qint64 r=src.read(buf.data(),buf.size())) {
-//          if (r == -1) return false;
-//          if (dst.write(buf.data(),r) != r) return false;
-//      }
+	QByteArray buf(1024 * 1024, 0);
+	while (true) {
+		qint64 read = src.read(buf.data(), buf.size());
+		if (read < 0) return false;
+		if (read == 0) break;
 
-    if (dst.write( src.readAll() ) == -1) return false;
+		qint64 written = 0;
+		while (written < read) {
+			qint64 chunk = dst.write(buf.constData() + written, read - written);
+			if (chunk <= 0) return false;
+			written += chunk;
+		}
+	}
 
 	src.close();
 	dst.close();
@@ -783,17 +802,48 @@ LoaderObject * MultiPageLoader::addResource(const QUrl & url, const settings::Lo
   (shamelessly copied from Arora Project)
   \param string The string the is suppose to be some kind of url
 */
+static bool isHostWithPort(const QString &urlStr) {
+	int colon = urlStr.indexOf(QLatin1Char(':'));
+	if (colon <= 0 || colon != urlStr.lastIndexOf(QLatin1Char(':')))
+		return false;
+
+	for (int i=0; i < colon; ++i) {
+		QChar c = urlStr.at(i);
+		if (!((c >= QLatin1Char('a') && c <= QLatin1Char('z')) ||
+			  (c >= QLatin1Char('A') && c <= QLatin1Char('Z')) ||
+			  c == QLatin1Char('.')))
+			return false;
+	}
+	for (int i=colon+1; i < urlStr.length(); ++i) {
+		QChar c = urlStr.at(i);
+		if (!(c >= QLatin1Char('0') && c <= QLatin1Char('9')))
+			return false;
+	}
+	return true;
+}
+
+static bool hasUrlSchema(const QString &urlStr) {
+	int schemaEnd = urlStr.indexOf(QLatin1String("://"));
+	if (schemaEnd <= 0)
+		return false;
+	for (int i=0; i < schemaEnd; ++i) {
+		QChar c = urlStr.at(i);
+		if (!((c >= QLatin1Char('a') && c <= QLatin1Char('z')) ||
+			  (c >= QLatin1Char('A') && c <= QLatin1Char('Z'))))
+			return false;
+	}
+	return true;
+}
+
 QUrl MultiPageLoader::guessUrlFromString(const QString &string) {
 	QString urlStr = string.trimmed();
 
 	// check if the string is just a host with a port
-	QRegExp hostWithPort(QLatin1String("^[a-zA-Z\\.]+\\:[0-9]*$"));
-	if (hostWithPort.exactMatch(urlStr))
+	if (isHostWithPort(urlStr))
 		urlStr = QLatin1String("http://") + urlStr;
 
 	// Check if it looks like a qualified URL. Try parsing it and see.
-	QRegExp test(QLatin1String("^[a-zA-Z]+\\://.*"));
-	bool hasSchema = test.exactMatch(urlStr);
+	bool hasSchema = hasUrlSchema(urlStr);
 	if (hasSchema) {
 		bool isAscii = true;
 		foreach (const QChar &c, urlStr) {
