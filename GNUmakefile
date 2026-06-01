@@ -5,7 +5,10 @@
 # delegate normal build/install targets to qmake's generated Makefile.
 
 .DEFAULT_GOAL := all
+.DELETE_ON_ERROR:
 
+# Common user knobs. Keep these standard and memorable: make JOBS=8,
+# make PREFIX=/path install, make DESTDIR=/tmp/pkg install.
 QMAKE_MAKEFILE ?= Makefile
 BUILD_DIR ?= build
 JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
@@ -29,6 +32,7 @@ endif
 prefix ?= /usr/local
 PREFIX ?= $(prefix)
 INSTALLBASE ?= $(PREFIX)
+INSTALL_ROOT ?=
 DESTDIR ?= $(INSTALL_ROOT)
 STAGEDIR ?= $(abspath $(BUILD_DIR)/stage)
 PROJECT_FILE ?= $(abspath wkhtmltopdf.pro)
@@ -37,6 +41,7 @@ PYTHON ?= python3
 SMOKE_TEST ?= tests/smoke/smoke.py
 WKHTMLTOPDF_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltopdf)
 WKHTMLTOIMAGE_BINARY ?= $(abspath $(BUILD_DIR)/bin/wkhtmltoimage)
+# Release/package knobs.
 PACKAGING_REPO ?= https://github.com/wkhtmltopdf/packaging.git
 PACKAGING_DIR ?= ../packaging
 RELEASE_VERSION ?= $(shell tr -d '[:space:]' < VERSION | sed 's/-.*//')
@@ -60,16 +65,26 @@ PUSH ?= true
 UPLOAD ?= false
 
 
-.PHONY: all install stage uninstall clean distclean help deps install-dev configure build shadow-build test check smoke e2e release release-patch release-minor release-major release-build release-build-all release-test release-test-all release-build-linux-deb release-build-windows-exe release-test-linux-deb release-test-windows-exe ensure-packaging
+.PHONY: all build configure test check smoke e2e
+.PHONY: install stage uninstall clean distclean deps install-dev help
+.PHONY: release release-patch release-minor release-major
+.PHONY: release-build release-build-all release-test release-test-all
+.PHONY: release-build-linux-deb release-build-windows-exe
+.PHONY: release-test-linux-deb release-test-windows-exe ensure-packaging
 
 all: build
 
 install: build
 	+@destdir="$(DESTDIR)"; \
-	if [ -z "$$destdir" ] && [ "$(INSTALLBASE)" = "/usr/local" ] && [ "$$(id -u)" != "0" ] && [ ! -w "$(INSTALLBASE)" ]; then \
-		destdir="$(STAGEDIR)"; \
-		echo "INSTALLBASE=$(INSTALLBASE) is not writable; staging under DESTDIR=$$destdir"; \
-		echo "For a real install, use: sudo make install PREFIX=$(INSTALLBASE)"; \
+	prefix="$(INSTALLBASE)"; \
+	if [ -z "$$destdir" ] && [ "$$(id -u)" != "0" ]; then \
+		probe="$$prefix"; \
+		while [ ! -e "$$probe" ] && [ "$$probe" != "/" ]; do probe="$$(dirname -- "$$probe")"; done; \
+		if [ ! -w "$$probe" ]; then \
+			destdir="$(STAGEDIR)"; \
+			echo "PREFIX=$$prefix is not writable; staging under DESTDIR=$$destdir"; \
+			echo "For a real install, use: sudo make install PREFIX=$$prefix"; \
+		fi; \
 	fi; \
 	$(MAKE) -C "$(BUILD_DIR)" install INSTALL_ROOT="$$destdir" || exit $$?; \
 	if [ -z "$$destdir" ] && [ "$$(id -u)" = "0" ] && command -v ldconfig >/dev/null 2>&1 && { [ "$(INSTALLBASE)" = "/usr" ] || [ "$(INSTALLBASE)" = "/usr/local" ]; }; then \
@@ -95,7 +110,14 @@ distclean:
 	fi
 	@build_dir="$(abspath $(BUILD_DIR))"; \
 	case "$$build_dir" in "/"|"$(CURDIR)") echo "Refusing to remove BUILD_DIR=$$build_dir" >&2; exit 2;; esac; \
-	if [ -d "$$build_dir" ]; then rm -rf "$$build_dir"; else echo "Nothing to distclean."; fi
+	if [ ! -d "$$build_dir" ]; then \
+		echo "Nothing to distclean."; \
+	elif [ -f "$$build_dir/.configure.args" ] || [ "$$build_dir" = "$(CURDIR)/build" ]; then \
+		rm -rf "$$build_dir"; \
+	else \
+		echo "Refusing to remove BUILD_DIR=$$build_dir; it was not configured by this wrapper." >&2; \
+		exit 2; \
+	fi
 
 deps install-dev:
 	./scripts/install-dev-deps.sh --qt "$(QT)" $(if $(DRY_RUN),--dry-run,)
@@ -132,23 +154,17 @@ test check smoke e2e: build
 	$(PYTHON) "$(SMOKE_TEST)"
 
 release:
-	@args="$(RELEASE_ARGS)"; \
-	if [ -n "$(BUMP)" ]; then args="--bump $(BUMP) $$args"; fi; \
-	if [ -n "$(VERSION_OVERRIDE)" ]; then args="--version $(VERSION_OVERRIDE) $$args"; fi; \
-	case "$(BUILD)" in 0|false|False|FALSE|no|No|NO) args="--no-build $$args";; esac; \
-	case "$(PUSH)" in 0|false|False|FALSE|no|No|NO) args="--no-push $$args";; esac; \
-	case "$(UPLOAD)" in 1|true|True|TRUE|yes|Yes|YES) args="--upload $$args";; esac; \
-	case "$(DRY_RUN)" in 1|true|True|TRUE|yes|Yes|YES) args="--dry-run $$args";; esac; \
-	./scripts/release.sh $$args
+	@./scripts/release.sh \
+		$(if $(BUMP),--bump $(BUMP)) \
+		$(if $(VERSION_OVERRIDE),--version $(VERSION_OVERRIDE)) \
+		$(if $(filter 0 false no,$(BUILD)),--no-build) \
+		$(if $(filter 0 false no,$(PUSH)),--no-push) \
+		$(if $(filter 1 true yes,$(UPLOAD)),--upload) \
+		$(if $(filter 1 true yes,$(DRY_RUN)),--dry-run) \
+		$(RELEASE_ARGS)
 
-release-patch:
-	$(MAKE) release BUMP=patch $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
-
-release-minor:
-	$(MAKE) release BUMP=minor $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
-
-release-major:
-	$(MAKE) release BUMP=major $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
+release-patch release-minor release-major:
+	$(MAKE) release BUMP=$(patsubst release-%,%,$@) $(if $(RELEASE_ARGS),RELEASE_ARGS='$(RELEASE_ARGS)',)
 
 release-build: $(RELEASE_BUILD_TARGETS)
 
