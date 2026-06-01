@@ -54,6 +54,9 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 follow-up: `WKHTMLTOPDF_BINARY=/usr/bin/wkhtmltopdf WKHTMLTOIMAGE_BINARY=/usr/bin/wkhtmltoimage python3 tests/smoke/smoke.py` passed and now checks complete patched help markers.
 - 2026-06-01 follow-up: rebuilt the Windows MXE package from the patched Qt cache, then created `artifacts/windows-exe/wkhtmltox-0.13.0-1.windows-mxe-cross-win64-installer.exe` with NSIS.
 - 2026-06-01 follow-up: extracted the Windows installer with `7z` and verified `bin/wkhtmltopdf.exe` contains `0.13.0 (with patched Qt)` plus the new full patched-Qt description.
+- 2026-06-01 follow-up: force-updated `0.13.0` and `latest` tags to commit `f0b8f49f`, uploaded replacement `.deb`, Windows installer, and checksum assets to both GitHub releases with `gh release upload --clobber`.
+- 2026-06-01 follow-up: downloaded the `latest` release `.deb`, extracted it, and verified direct `wkhtmltopdf.bin --version` plus clean man-style help with no reduced-functionality markers.
+- 2026-06-01 follow-up: downloaded the `latest` release Windows installer, verified checksum `c7ee26c39f95e5f61e0f46c48da1bf92cc42abd771e8cb947a383c701ec3f48f`, extracted it with `7z`, and verified `bin/wkhtmltopdf.exe` contains `(with patched Qt)` and the full patched-Qt description.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, CI/release should fail rather than publishing reduced-functionality packages.
