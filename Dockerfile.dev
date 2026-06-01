@@ -1,0 +1,46 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        binutils \
+        ca-certificates \
+        coreutils \
+        docker.io \
+        file \
+        findutils \
+        git \
+        make \
+        nsis \
+        p7zip-full \
+        python3 \
+        python3-yaml \
+        shellcheck \
+        zstd \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 https://github.com/wkhtmltopdf/packaging.git /opt/wkhtmltopdf-packaging \
+    && python3 - <<'PY'
+from pathlib import Path
+mxe = Path('/opt/wkhtmltopdf-packaging/docker/Dockerfile.mxe')
+text = mxe.read_text()
+old = "RUN apt-get update && apt-get install -y -q --no-install-recommends \\\n"
+new = """RUN sed -i \\
+        -e 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|g' \\
+        -e 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' \\
+        -e '/buster-updates/d' \\
+        /etc/apt/sources.list \\
+    && printf 'Acquire::Check-Valid-Until \"false\";\\n' >/etc/apt/apt.conf.d/99archive-valid-until \\
+    && apt-get update && apt-get install -y -q --no-install-recommends \\
+"""
+mxe.write_text(text.replace(old, new, 1))
+
+build = Path('/opt/wkhtmltopdf-packaging/build')
+text = build.read_text()
+old = "    shell('rm -fr %s/app/bin %s/wkhtmltox' % (tgt_dir, tgt_dir))\n"
+new = old + "    shell('mkdir -p %s/app/bin' % tgt_dir)\n"
+build.write_text(text.replace(old, new, 1))
+PY
+
+WORKDIR /src

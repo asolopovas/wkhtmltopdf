@@ -76,11 +76,11 @@ while [[ $# -gt 0 ]]; do
                 bump="$2"
                 shift 2
             else
-                bump=patch
+                bump="patch"
                 shift
             fi
             ;;
-        --bump=*) bump="${1#--bump=}"; [[ -n "${bump}" ]] || bump=patch; shift ;;
+        --bump=*) bump="${1#--bump=}"; [[ -n "${bump}" ]] || bump="patch"; shift ;;
         --version) [[ $# -ge 2 ]] || err "--version requires a value"; version_override="$2"; shift 2 ;;
         --version=*) version_override="${1#--version=}"; [[ -n "${version_override}" ]] || err "--version requires a value"; shift ;;
         --output) [[ $# -ge 2 ]] || err "--output requires a value"; output_dir="$2"; shift 2 ;;

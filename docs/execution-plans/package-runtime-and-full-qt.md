@@ -32,6 +32,8 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - [x] Build replacement Linux `.deb` and Windows installer artifacts for 0.13.0.
 - [x] Fix Qt 4/OpenSSL 1.1 HTTPS rendering failure and JavaScript-triggered indeterminate upload aborts.
 - [x] Add AVIF decoding for patched Qt WebKit through ImageMagick-compatible converters.
+- [x] Add a Docker/MXE path for building the Windows installer from Linux.
+- [x] Make `make build`, `make release`, and `make build-release` map to build-only, release-only, and build-then-release workflows.
 
 ## Decisions
 - Do not hide reduced functionality by changing help text; reject unpatched Qt at build/test time instead.
@@ -99,6 +101,8 @@ Ship wkhtmltox packages at version 0.13.0 that install cleanly, do not expose pr
 - 2026-06-01 Docker E2E follow-up: added `tests/deb/e2e-docker.sh`, `tests/deb/Dockerfile.e2e`, and `tests/deb/e2e-install-container.sh` to validate a supplied `.deb` in fresh containers with only `dpkg -i` plus version, symlink, stale library, and reduced-functionality assertions.
 - 2026-06-01 Docker E2E validation passed for public release asset `c0f9dc53987248e3a24214b0acbee9cfc646a35837942a397ee6a533470350de`: `tests/deb/e2e-docker.sh /tmp/opencode/release-epoch-verify/latest/wkhtmltox_0.13.0-1.linux_amd64.deb` across `ubuntu:20.04`, `ubuntu:22.04`, `ubuntu:24.04`, `debian:bookworm-slim`, and `debian:trixie-slim`.
 - 2026-06-01 Docker E2E script validation passed: `bash -n tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `shellcheck tests/deb/e2e-docker.sh tests/deb/e2e-install-container.sh tests/deb/deb-loader.sh scripts/build-linux-deb.sh`; `git diff --check`.
+- 2026-06-01 Windows Docker packaging follow-up: added `Dockerfile.dev`, moved the Windows Docker wrapper logic into `GNUmakefile`, removed the extra `scripts/build-windows-docker.sh`, made `release-build-windows-exe` use the Docker/MXE path by default, kept the host MSYS2 path as `release-build-windows-exe-msys2`, and ran the Windows wrapper inside `asolopovas/wkhtmltox-dev:24.04` with the checkout mounted at the same host path plus the host UID/GID.
+- 2026-06-01 Windows Docker packaging validation passed: `bash -n scripts/build-windows-msys2.sh scripts/build-linux-deb.sh scripts/release.sh scripts/build-cache.sh scripts/install-dev-deps.sh scripts/patch-qt4-modern-build.sh`; `shellcheck scripts/build-windows-msys2.sh scripts/build-linux-deb.sh scripts/release.sh scripts/build-cache.sh scripts/install-dev-deps.sh scripts/patch-qt4-modern-build.sh`; `git diff --check`; `make docker-dev-image DOCKER_DEV_REBUILD=1 DOCKER_DEV_PUSH=0`; `make release-build-windows-exe-docker RELEASE_OUTPUT=artifacts DOCKER_DEV_PUSH=0 WINDOWS_DOCKER_CLEAN=0`; extract the installer with `7z` and verify `bin/wkhtmltopdf.exe` contains `0.13.0 (with patched Qt)`. The build produced `artifacts/windows-exe/wkhtmltox-0.13.0-1.windows-mxe-cross-win64-installer.exe` with checksum `4d43a30215b9c57b96fd70e83f782a426b5d96be0ea45f2ad20d00253b7ea963`. Pushed `asolopovas/wkhtmltox-dev:24.04` to Docker Hub with digest `sha256:c3c3effe46e6a9f4c2721d01ef038d6e5f48486dccef4f774c9ed0ad3f24a6ef`.
 
 ## Debt
 - A full artifact build requires a patched Qt toolchain. If unavailable locally, release packaging should fail rather than publishing reduced-functionality packages.
